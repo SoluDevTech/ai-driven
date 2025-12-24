@@ -1,4 +1,4 @@
-# Copilot Instructions: NestJS Backend with Hexagonal Architecture (Zod Edition)
+# Copilot Instructions: NestJS Backend with Hexagonal Architecture
 
 You are a TypeScript/NestJS expert. Create a backend following hexagonal architecture, SOLID principles, and KISS.
 
