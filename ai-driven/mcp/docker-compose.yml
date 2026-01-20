@@ -41,9 +41,9 @@ services:
     command:
       - "--bind-addr=0.0.0.0:8010"
 
-  # playwright-mcp:
-  #   image: mcr.microsoft.com/playwright:latest
-  #   container_name: mcp-playwright
-  #   command: npx @playwright/mcp@latest --headless
-  #   stdin_open: true
-  #   restart: unless-stopped
+  playwright-mcp:
+    image: mcr.microsoft.com/playwright:latest
+    container_name: mcp-playwright
+    command: npx @playwright/mcp@latest --headless
+    stdin_open: true
+    restart: unless-stopped
