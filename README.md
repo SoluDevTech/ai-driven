@@ -142,6 +142,89 @@ All agents work together in a structured 5-phase development workflow:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+## End-to-End CI/CD Integration
+
+The AI agents integrate seamlessly with your existing CI/CD pipeline. Here's the complete development cycle:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     END-TO-END DEVELOPMENT CYCLE                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐                                                            │
+│  │    JIRA      │  User writes tickets with requirements                     │
+│  │   Tickets    │                                                            │
+│  └──────┬───────┘                                                            │
+│         │                                                                    │
+│         │ MCP Atlassian                                                      │
+│         ▼                                                                    │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                     AI CODING AGENT                                   │   │
+│  │                 (Claude Code / OpenCode / Copilot)                    │   │
+│  │                                                                       │   │
+│  │  Reads ticket → Orchestrates sub-agents automatically:                │   │
+│  │                                                                       │   │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐     │   │
+│  │  │  product-   │→│ test-       │→│ [stack]-    │→│ code-       │     │   │
+│  │  │  owner      │ │ writer      │ │ hexagonal   │ │ reviewer    │     │   │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘     │   │
+│  │                                                                       │   │
+│  └──────────────────────────────────┬───────────────────────────────────┘   │
+│                                     │                                        │
+│                                     ▼                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                      USER PUSHES TO BRANCH                            │   │
+│  └──────────────────────────────────┬───────────────────────────────────┘   │
+│                                     │                                        │
+│                                     ▼                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                    CI PIPELINE → SONARQUBE                            │   │
+│  │                                                                       │   │
+│  │  - Static code analysis                                               │   │
+│  │  - Code smells detection                                              │   │
+│  │  - Security vulnerabilities                                           │   │
+│  │  - Coverage reports                                                   │   │
+│  └──────────────────────────────────┬───────────────────────────────────┘   │
+│                                     │                                        │
+│                                     │ MCP SonarQube                          │
+│                                     ▼                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                     AI AGENT FIXES ISSUES                             │   │
+│  │                                                                       │   │
+│  │  User: "Get SonarQube issues for project X and fix them"              │   │
+│  │                                                                       │   │
+│  │  Agent reads issues via MCP → Fixes code smells & bugs automatically  │   │
+│  └──────────────────────────────────┬───────────────────────────────────┘   │
+│                                     │                                        │
+│                                     ▼                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                USER PUSHES → CI → SONAR → ...                         │   │
+│  │                                                                       │   │
+│  │            (Loop until quality gate passes ✓)                         │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Start
+
+```bash
+# 1. Start MCP services
+cd ai-driven/mcp
+cp env.sonar.example .env.sonar      # Configure your SonarQube token
+cp env.atlassian.example .env.atlassian  # Configure your Jira credentials
+docker-compose up -d
+
+# 2. In your AI coding tool, just say:
+"Implement ticket PROJ-123"
+
+# The agent handles the rest: reads the ticket, orchestrates sub-agents,
+# writes tests, implements code, reviews, and commits.
+
+# 3. After CI/Sonar analysis:
+"Get SonarQube issues for my-project and fix them"
+```
+
 ## Architecture & Principles
 
 All implementation agents enforce these architectural patterns and principles:
