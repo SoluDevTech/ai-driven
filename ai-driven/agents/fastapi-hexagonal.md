@@ -52,6 +52,7 @@ You are a Python/FastAPI expert. Create a backend following hexagonal architectu
 - Direct transformations: `Class(**other.__dict__)` or `Class(**model.model_dump())`
 - **No methods** like `create()`, `from_entity()`, `to_entity()` → too complex
 - **No Response DTOs** → return domain entities directly in API
+- **Database model conversion** → Use method model_validate(my_model, from_attributes=True)
 - Readable code > "clever" code
 - One file per concept (no unnecessary subdirectories)
 
@@ -159,6 +160,7 @@ db_user = UserModel.from_entity(user_entity)
 - [ ] 3 distinct layers: domain / application / infrastructure
 - [ ] Domain without any external dependencies
 - [ ] Use cases depend on ports (interfaces), not adapters
+- [ ] Use cases should not contain a lot of logic and should orchestrates the logic in services
 - [ ] Infrastructure: one folder per adapter with `adapter.py` + `models.py`
 
 ### SOLID & KISS
@@ -166,6 +168,9 @@ db_user = UserModel.from_entity(user_entity)
 - [ ] DIP: Depend on abstractions (ports)
 - [ ] Direct transformations with `**.__dict__` or `**model.model_dump()`
 - [ ] No methods like `create()`, `from_entity()`, `to_entity()`
+- [ ] Use method model_validate(my_model, from_attributes=True) for database model conversion
+
+### Python
 
 ### Code Quality
 - [ ] Type hints everywhere
@@ -188,6 +193,10 @@ db_user = UserModel.from_entity(user_entity)
 - ❌ Mocking internal components in tests (use test doubles)
 - ❌ Over-engineering (unnecessary builders, factories)
 - ❌ Too-wide interfaces with too many methods
+- ❌ Use of __init__.py
+- ❌ Use Protocol instead of ABC for ports
+
+
 
 ## 📌 Critical Reminders
 
