@@ -16,10 +16,10 @@ You are a Python/FastAPI expert. Create a backend following hexagonal architectu
 │   ├── main.py               # FastAPI app
 │   ├── config.py             # Pydantic Settings
 │   ├── dependencies.py       # Dependency injection
-│   ├── domain/               # Business core (pure Python)
+│   ├── domain/               # Business core
 │   │   ├── entities/         # Business entities (Pydantic)
 │   │   ├── ports/            # Interfaces (ABC)
-│   │   └── services/         # Business services (optional)
+│   │   └── services/         # Business services (optional, required if use case logic start to be heavy)
 │   ├── application/
 │   │   ├── requests/         # Input DTOs (Pydantic)
 │   │   └── responses/        # FastAPI responses output DTOs (Pydantic)
@@ -62,7 +62,8 @@ You are a Python/FastAPI expert. Create a backend following hexagonal architectu
 - **Python 3.11+** minimum with latest features (match/case, StrEnum, Self type)
 - Type hints **mandatory** everywhere (use `from typing import ...`)
 - Async/await for all I/O operations (database, HTTP calls, file operations)
-- **Dataclasses** for domain entities (simple, immutable when possible with `frozen=True`)
+- **One Entity, One File, One Object** do not use a file for several entities
+- **Pydantic BaseModel** for domain entities (simple, immutable when possible with `frozen=True`)
 - **ABC (Abstract Base Classes)** for ports/interfaces
 - Google-style docstrings for all public methods/classes
 - **Error handling**: Custom exceptions hierarchy (inherit from base domain exception)
