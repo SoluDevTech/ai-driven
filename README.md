@@ -29,7 +29,9 @@ prompt-rules/
 └── ai-driven/                          # Main configuration directory
     ├── agents/                         # Shared agent definitions (source of truth)
     │   ├── product-owner.md
-    │   ├── test-writer.md
+    │   ├── test-writer-python.md
+    │   ├── test-writer-nestjs.md
+    │   ├── test-writer-react.md
     │   ├── fastapi-hexagonal.md
     │   ├── nestjs-hexagonal.md
     │   ├── react-hexagonal.md
@@ -39,48 +41,71 @@ prompt-rules/
     │   ├── tester-qa.md
     │   └── k3s-devops.md
     │
+    ├── skills/                         # Shared skill definitions (source of truth)
+    │   ├── sonarfix/
+    │   ├── trivyfix/
+    │   ├── feature-implementation/
+    │   └── frontend-design/
+    │
     ├── claude/                         # Claude Code configuration
-    │   ├── CLAUDE.md                   # Main workflow instructions
-    │   ├── .claude.json                # MCP server configuration
+    │   ├── .claude.example.json        # MCP server configuration template
     │   └── .claude/
+    │       ├── CLAUDE.md               # Main workflow instructions
+    │       ├── agents/                 # Agent prompt files (copy of shared agents)
     │       └── skills/                 # Claude-specific skills
-    │           ├── frontend-design/
-    │           └── webapp-testing/
+    │           ├── sonarfix/
+    │           ├── trivyfix/
+    │           ├── feature-implementation/
+    │           └── frontend-design/
     │
     ├── copilot/                        # GitHub Copilot configuration
     │   ├── mcp.json                    # MCP server configuration
     │   └── .github/
-    │       └── copilot-instructions.md # Main workflow instructions
+    │       ├── copilot-instructions.md # Main workflow instructions
+    │       ├── agents/                 # Agent prompt files (copy of shared agents)
+    │       └── skills/                 # Copilot-specific skills
+    │           ├── sonarfix/
+    │           ├── trivyfix/
+    │           ├── feature-implementation/
+    │           └── frontend-design/
     │
     ├── opencode/                       # OpenCode AI configuration
     │   └── .opencode/
-    │       ├── opencode.json           # Agent registry & MCP config
+    │       ├── opencode.example.json   # Agent registry & MCP config template
     │       ├── AGENTS.md               # Workflow documentation
     │       ├── package.json            # Plugin dependencies
-    │       └── agents/                 # Agent prompt files
+    │       ├── agents/                 # Agent prompt files (copy of shared agents)
+    │       └── skills/                 # OpenCode-specific skills
+    │           ├── sonarfix/
+    │           ├── trivyfix/
+    │           ├── feature-implementation/
+    │           └── frontend-design/
     │
     └── mcp/                            # MCP server infrastructure
         ├── docker-compose.yml          # Service definitions
-        ├── env.sonar.example           # SonarQube env template
         └── env.atlassian.example       # Atlassian env template
 ```
 
 ## Specialized Agents
 
-The system includes 10 specialized AI agents, each designed for a specific phase of development:
+The system includes 12 specialized AI agents, each designed for a specific phase of development:
 
 | Agent | Purpose | Model | Permissions |
 |-------|---------|-------|-------------|
-| `product-owner` | Requirements analysis, acceptance criteria, user stories | Claude Haiku | Read-only |
-| `test-writer` | TDD unit tests with pytest, test doubles (fakes) | Claude Sonnet | Write, Edit |
-| `fastapi-hexagonal` | FastAPI backend with hexagonal architecture | Claude Sonnet | Write, Edit, Bash |
-| `nestjs-hexagonal` | NestJS backend with hexagonal architecture | Claude Sonnet | Write, Edit, Bash |
-| `react-hexagonal` | React frontend with hexagonal architecture | Claude Sonnet | Write, Edit, Bash |
-| `code-reviewer` | Implementation planning and code review | Claude Sonnet | Read-only |
-| `code-simplifier` | Code refactoring for clarity/maintainability | Claude Sonnet | Edit only |
-| `documentation-writer` | README and API documentation generation | Claude Sonnet | Write, Edit |
-| `tester-qa` | Manual and API testing verification | Claude Sonnet | Edit only |
-| `k3s-devops` | K3s/Flux CD infrastructure management (GitOps) | Claude Sonnet | Write, Edit, Bash |
+| `product-owner` | Requirements analysis, acceptance criteria, user stories | Claude Opus | Read-only |
+| `test-writer-python` | TDD unit tests with pytest, pytest-asyncio, test doubles (fakes) | Claude Opus | Write, Edit |
+| `test-writer-nestjs` | Unit/integration tests with Jest, Supertest for NestJS | Claude Opus | Write, Edit |
+| `test-writer-react` | Unit/integration tests with Vitest, React Testing Library | Claude Opus | Write, Edit |
+| `fastapi-hexagonal` | FastAPI backend with hexagonal architecture | Claude Opus | Write, Edit, Bash |
+| `nestjs-hexagonal` | NestJS backend with hexagonal architecture | Claude Opus | Write, Edit, Bash |
+| `react-hexagonal` | React frontend with hexagonal architecture | Claude Opus | Write, Edit, Bash |
+| `code-reviewer` | Implementation planning and code review | Claude Opus | Read-only |
+| `code-simplifier` | Code refactoring for clarity/maintainability | Claude Opus | Edit only |
+| `documentation-writer` | README and API documentation generation | Claude Opus | Write, Edit |
+| `tester-qa` | Manual and API testing verification | Claude Opus | Edit only |
+| `k3s-devops` | K3s/Flux CD infrastructure management (GitOps) | Claude Opus | Write, Edit, Bash |
+
+> **Note:** All agents declare `model: opus` in their frontmatter. Tools like OpenCode can override the model per-agent in their configuration (e.g., `opencode.json`).
 
 ## Development Workflow
 
@@ -93,7 +118,7 @@ All agents work together in a structured 5-phase development workflow:
 │                                                                              │
 │  PHASE 1: REQUIREMENTS                                                       │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ product-owner (Claude Haiku)                                         │    │
+│  │ product-owner (Claude Opus)                                          │    │
 │  │ - Clarify requirements with stakeholders                             │    │
 │  │ - Define acceptance criteria                                         │    │
 │  │ - Create user stories                                                │    │
@@ -102,7 +127,8 @@ All agents work together in a structured 5-phase development workflow:
 │                                    ▼                                         │
 │  PHASE 2: TEST-FIRST DEVELOPMENT                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ test-writer (Claude Sonnet)                                          │    │
+│  │ test-writer-* (Claude Opus)                                          │    │
+│  │ - Variants: test-writer-python, test-writer-nestjs, test-writer-react│    │
 │  │ - Write failing unit tests (TDD)                                     │    │
 │  │ - Define test doubles (fakes)                                        │    │
 │  │ - Establish coverage targets (80%+)                                  │    │
@@ -135,7 +161,7 @@ All agents work together in a structured 5-phase development workflow:
 │                                                                              │
 │  INFRASTRUCTURE (on-demand)                                                  │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ k3s-devops (Claude Sonnet)                                           │    │
+│  │ k3s-devops (Claude Opus)                                              │    │
 │  │ - Kubernetes/GitOps infrastructure changes                           │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │
@@ -178,27 +204,26 @@ The AI agents integrate seamlessly with your existing CI/CD pipeline. Here's the
 │                                     │                                        │
 │                                     ▼                                        │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                    CI PIPELINE → SONARQUBE                            │   │
+│  │                         CI PIPELINE                                   │   │
 │  │                                                                       │   │
+│  │  - Build & test                                                       │   │
 │  │  - Static code analysis                                               │   │
-│  │  - Code smells detection                                              │   │
-│  │  - Security vulnerabilities                                           │   │
+│  │  - Security scanning                                                  │   │
 │  │  - Coverage reports                                                   │   │
 │  └──────────────────────────────────┬───────────────────────────────────┘   │
 │                                     │                                        │
-│                                     │ MCP SonarQube                          │
 │                                     ▼                                        │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │
 │  │                     AI AGENT FIXES ISSUES                             │   │
 │  │                                                                       │   │
-│  │  User: "Get SonarQube issues for project X and fix them"              │   │
+│  │  User: "/sonarfix" or "/trivyfix"                                     │   │
 │  │                                                                       │   │
-│  │  Agent reads issues via MCP → Fixes code smells & bugs automatically  │   │
+│  │  Agent runs remediation skills → Fixes issues automatically           │   │
 │  └──────────────────────────────────┬───────────────────────────────────┘   │
 │                                     │                                        │
 │                                     ▼                                        │
 │  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                USER PUSHES → CI → SONAR → ...                         │   │
+│  │                USER PUSHES → CI → ...                                 │   │
 │  │                                                                       │   │
 │  │            (Loop until quality gate passes ✓)                         │   │
 │  └──────────────────────────────────────────────────────────────────────┘   │
@@ -211,7 +236,6 @@ The AI agents integrate seamlessly with your existing CI/CD pipeline. Here's the
 ```bash
 # 1. Start MCP services
 cd ai-driven/mcp
-cp env.sonar.example .env.sonar      # Configure your SonarQube token
 cp env.atlassian.example .env.atlassian  # Configure your Jira credentials
 docker-compose up -d
 
@@ -220,9 +244,6 @@ docker-compose up -d
 
 # The agent handles the rest: reads the ticket, orchestrates sub-agents,
 # writes tests, implements code, reviews, and commits.
-
-# 3. After CI/Sonar analysis:
-"Get SonarQube issues for my-project and fix them"
 ```
 
 ## Architecture & Principles
@@ -322,20 +343,6 @@ All implementation agents enforce these architectural patterns and principles:
 
 The system integrates with external tools via Model Context Protocol (MCP):
 
-### SonarQube
-
-Code quality analysis, issue tracking, and quality gate status.
-
-```json
-{
-  "sonarqube": {
-    "type": "remote",
-    "url": "http://localhost:9081/mcp",
-    "enabled": true
-  }
-}
-```
-
 ### Atlassian (Jira/Confluence)
 
 Jira issue management and Confluence documentation integration.
@@ -350,9 +357,32 @@ Jira issue management and Confluence documentation integration.
 }
 ```
 
-### Playwright
+### Context7
 
-Browser automation for web application testing.
+Library documentation and code examples lookup. Runs in docker-compose on port 9021.
+
+```json
+{
+  "context7": {
+    "type": "remote",
+    "url": "http://localhost:9021/mcp",
+    "enabled": true
+  }
+}
+```
+
+### Chrome DevTools
+
+Browser inspection and debugging via Chrome DevTools Protocol. Runs as a local npx command.
+
+```json
+{
+  "chrome-devtools": {
+    "command": "npx",
+    "args": ["-y", "chrome-devtools-mcp@latest"]
+  }
+}
+```
 
 ## Installation
 
@@ -373,7 +403,6 @@ cd ai-driven/mcp
 2. Create environment files from templates:
 
 ```bash
-cp env.sonar.example .env.sonar
 cp env.atlassian.example .env.atlassian
 ```
 
@@ -410,22 +439,22 @@ bun install
 
 ### Setting Up Claude Code
 
-1. Copy the workflow instructions to your project root:
-
-```bash
-cp ai-driven/claude/CLAUDE.md /path/to/your/project/
-```
-
-2. Copy the MCP configuration:
-
-```bash
-cp ai-driven/claude/.claude.json /path/to/your/project/
-```
-
-3. Create the `.claude` directory and copy agents:
+1. Create the `.claude` directory and copy the workflow instructions:
 
 ```bash
 mkdir -p /path/to/your/project/.claude
+cp ai-driven/claude/.claude/CLAUDE.md /path/to/your/project/.claude/
+```
+
+2. Copy the MCP configuration template:
+
+```bash
+cp ai-driven/claude/.claude.example.json /path/to/your/project/.claude.json
+```
+
+3. Copy the shared agents:
+
+```bash
 cp -r ai-driven/agents /path/to/your/project/.claude/
 ```
 
@@ -465,21 +494,29 @@ cp -r ai-driven/agents /path/to/your/project/.github/
 
 Additional skills are available for enhanced capabilities:
 
+### sonarfix
+
+SonarQube issue remediation workflow. Retrieves issues via MCP, groups them, presents a fix plan, and implements fixes in batches with test verification.
+
+**Available for:** Claude Code, GitHub Copilot, OpenCode
+
+### trivyfix
+
+Trivy vulnerability remediation workflow. Runs trivy CLI scans, groups findings by severity and type, presents a fix plan, and implements fixes in batches with verification.
+
+**Available for:** Claude Code, GitHub Copilot, OpenCode
+
+### feature-implementation
+
+Agent-based development workflow for implementation tasks. Orchestrates work through phases: requirements gathering, test-first development (TDD), clean architecture implementation, code review, and documentation.
+
+**Available for:** Claude Code, GitHub Copilot, OpenCode
+
 ### frontend-design
 
 Creates distinctive, production-grade UIs that avoid generic "AI-generated" aesthetics. Focuses on unique visual identity, intentional design choices, and polished user experiences.
 
-**Available for:** Claude Code, OpenCode (react-hexagonal agent)
-
-### webapp-testing
-
-Playwright-based web testing toolkit with helper scripts for:
-- Element discovery
-- Static HTML automation
-- Console logging and debugging
-- Server lifecycle management
-
-**Available for:** Claude Code, OpenCode (tester-qa agent)
+**Available for:** Claude Code, GitHub Copilot, OpenCode
 
 ## Usage Examples
 
