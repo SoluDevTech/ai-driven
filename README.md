@@ -1,10 +1,10 @@
-# AI-Driven Development Workflow - Prompt Rules
+# AI-Driven Development Workflow
 
-A comprehensive multi-tool AI coding assistant configuration system that standardizes software development workflows across OpenCode, Claude Code, and GitHub Copilot.
+A multi-tool AI coding assistant configuration system that standardizes software development workflows across Claude Code, OpenCode, and GitHub Copilot.
 
 ## Overview
 
-This repository provides unified AI agent configurations and prompt templates designed to:
+This repository provides unified AI agent and skill configurations designed to:
 
 - **Standardize development workflows** across multiple AI coding assistants
 - **Enforce architectural best practices** (Hexagonal Architecture, SOLID, TDD)
@@ -14,293 +14,222 @@ This repository provides unified AI agent configurations and prompt templates de
 
 ## Supported AI Tools
 
-| Tool | Configuration Location | Status |
-|------|----------------------|--------|
-| [OpenCode AI](https://opencode.ai) | `ai-driven/opencode/` | Full support |
+| Tool | Configuration | Status |
+|------|--------------|--------|
 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | `ai-driven/claude/` | Full support |
+| [OpenCode AI](https://opencode.ai) | `ai-driven/opencode/` | Full support |
 | [GitHub Copilot](https://github.com/features/copilot) | `ai-driven/copilot/` | Full support |
 
 ## Repository Structure
 
 ```
 prompt-rules/
-├── README.md                           # This file
-├── .gitignore                          # Git ignore rules
-└── ai-driven/                          # Main configuration directory
-    ├── agents/                         # Shared agent definitions (source of truth)
-    │   ├── product-owner.md
-    │   ├── test-writer-python.md
-    │   ├── test-writer-nestjs.md
-    │   ├── test-writer-react.md
-    │   ├── fastapi-hexagonal.md
-    │   ├── nestjs-hexagonal.md
-    │   ├── react-hexagonal.md
-    │   ├── code-reviewer.md
-    │   ├── code-simplifier.md
-    │   ├── documentation-writer.md
-    │   ├── tester-qa.md
-    │   └── k3s-devops.md
-    │
-    ├── skills/                         # Shared skill definitions (source of truth)
-    │   ├── sonarfix/
-    │   ├── trivyfix/
-    │   ├── feature-implementation/
-    │   └── frontend-design/
-    │
-    ├── claude/                         # Claude Code configuration
-    │   ├── .claude.example.json        # MCP server configuration template
-    │   └── .claude/
-    │       ├── CLAUDE.md               # Main workflow instructions
-    │       ├── settings.local.json     # Local settings (git-ignored)
-    │       ├── agents/                 # Agent prompt files (copy of shared agents)
-    │       └── skills/                 # Claude-specific skills
-    │           ├── sonarfix/
-    │           ├── trivyfix/
-    │           ├── feature-implementation/
-    │           └── frontend-design/
-    │
-    ├── copilot/                        # GitHub Copilot configuration
-    │   ├── mcp.json                    # MCP server configuration
-    │   └── .github/
-    │       ├── copilot-instructions.md # Main workflow instructions
-    │       ├── agents/                 # Agent prompt files (copy of shared agents)
-    │       └── skills/                 # Copilot-specific skills
-    │           ├── sonarfix/
-    │           ├── trivyfix/
-    │           ├── feature-implementation/
-    │           └── frontend-design/
-    │
-    ├── opencode/                       # OpenCode AI configuration
-    │   └── .opencode/
-    │       ├── opencode.example.json   # Agent registry & MCP config template
-    │       ├── AGENTS.md               # Workflow documentation
-    │       ├── package.json            # Plugin dependencies
-    │       ├── agents/                 # Agent prompt files (copy of shared agents)
-    │       └── skills/                 # OpenCode-specific skills
-    │           ├── sonarfix/
-    │           ├── trivyfix/
-    │           ├── feature-implementation/
-    │           └── frontend-design/
-    │
-    └── mcp/                            # MCP server infrastructure
-        ├── docker-compose.yml          # Service definitions
-        ├── env.atlassian.example       # Atlassian env template
-        └── env.sonar.example           # SonarQube env template
+├── README.md
+├── .gitignore
+├── ai-driven/
+│   ├── agents/                         # Shared agent definitions (source of truth)
+│   │   ├── product-owner.md
+│   │   ├── test-writer-python.md
+│   │   ├── test-writer-nestjs.md
+│   │   ├── test-writer-react.md
+│   │   ├── fastapi-hexagonal.md
+│   │   ├── nestjs-hexagonal.md
+│   │   ├── react-hexagonal.md
+│   │   ├── code-reviewer.md
+│   │   ├── code-simplifier.md
+│   │   ├── documentation-writer.md
+│   │   ├── tester-qa.md
+│   │   └── k3s-devops.md
+│   │
+│   ├── claude/                         # Claude Code configuration
+│   │   ├── .claude.example.json        # MCP server config template
+│   │   └── .claude/
+│   │       ├── CLAUDE.md               # Main workflow instructions
+│   │       ├── settings.json           # Permissions (deny list)
+│   │       ├── COPY_AGENTS_FOLDER_HERE # Marker: copy agents/ here
+│   │       └── COPY_SKILLS_FOLDER_HERE # Marker: copy skills/ here
+│   │
+│   ├── copilot/                        # GitHub Copilot configuration
+│   │   ├── mcp.json                    # MCP server config
+│   │   └── .github/
+│   │       ├── copilot-instructions.md # Main workflow instructions
+│   │       ├── COPY_AGENTS_FOLDER_HERE # Marker: copy agents/ here
+│   │       └── COPY_SKILLS_FOLDER_HERE # Marker: copy skills/ here
+│   │
+│   ├── opencode/                       # OpenCode AI configuration
+│   │   ├── COPY_SKILLS_FOLDER_HERE     # Marker: copy skills/ here
+│   │   └── .opencode/
+│   │       ├── opencode.example.json   # Agent registry & MCP config template
+│   │       ├── AGENTS.md               # Workflow instructions
+│   │       ├── package.json            # Plugin dependencies (@opencode-ai/plugin)
+│   │       └── COPY_AGENTS_FOLDER_HERE # Marker: copy agents/ here
+│   │
+│   └── mcp/                            # MCP server infrastructure
+│       ├── docker-compose.yml          # Atlassian + Context7 services
+│       └── env.atlassian.example       # Atlassian env template
+│
+└── skills/                             # Shared skill definitions (source of truth)
+    ├── brainstorming/                  # Design-first brainstorming with visual companion
+    │   ├── SKILL.md
+    │   ├── spec-document-reviewer-prompt.md
+    │   ├── visual-companion.md
+    │   └── scripts/                    # Browser-based visual companion server
+    ├── feature-implementation/         # Orchestrator: 6-phase dev workflow
+    ├── githubpr/                       # Full PR lifecycle (branch → CI → merge)
+    ├── sonarfix/                       # SonarQube issue remediation
+    ├── trivyfix/                       # Trivy vulnerability remediation
+    ├── dbanalyze/                      # Database schema analysis (SchemaCrawler)
+    ├── popeyescan/                     # Kubernetes cluster health audit (Popeye)
+    └── frontend-design/                # Production-grade UI design
 ```
+
+### Source of truth and copy convention
+
+Agents live in `ai-driven/agents/` and skills in `skills/`. Each tool-specific directory contains `COPY_AGENTS_FOLDER_HERE` and `COPY_SKILLS_FOLDER_HERE` marker files indicating where to copy them. The `.gitignore` excludes tool-specific copies so the shared directories remain the single source of truth.
 
 ## Specialized Agents
 
-The system includes 12 specialized AI agents, each designed for a specific phase of development:
+12 agents, each designed for a specific phase of development:
 
-| Agent | Purpose | Model | Permissions |
-|-------|---------|-------|-------------|
-| `product-owner` | Requirements analysis, acceptance criteria, user stories | Claude Opus | Read-only |
-| `test-writer-python` | TDD unit tests with pytest, pytest-asyncio, test doubles (fakes) | Claude Opus | Write, Edit |
-| `test-writer-nestjs` | Unit/integration tests with Jest, Supertest for NestJS | Claude Opus | Write, Edit |
-| `test-writer-react` | Unit/integration tests with Vitest, React Testing Library | Claude Opus | Write, Edit |
-| `fastapi-hexagonal` | FastAPI backend with hexagonal architecture | Claude Opus | Write, Edit, Bash |
-| `nestjs-hexagonal` | NestJS backend with hexagonal architecture | Claude Opus | Write, Edit, Bash |
-| `react-hexagonal` | React frontend with hexagonal architecture | Claude Opus | Write, Edit, Bash |
-| `code-reviewer` | Implementation planning and code review | Claude Opus | Read-only |
-| `code-simplifier` | Code refactoring for clarity/maintainability | Claude Opus | Edit only |
-| `documentation-writer` | README and API documentation generation | Claude Opus | Write, Edit |
-| `tester-qa` | Manual and API testing verification | Claude Opus | Edit only |
-| `k3s-devops` | K3s/Flux CD infrastructure management (GitOps) | Claude Opus | Write, Edit, Bash |
+| Agent | Purpose |
+|-------|---------|
+| `product-owner` | Requirements analysis, acceptance criteria, user stories |
+| `test-writer-python` | TDD with pytest, real implementations, mock only external boundaries |
+| `test-writer-nestjs` | Jest + Supertest, SQLite in-memory, real implementations |
+| `test-writer-react` | Vitest + React Testing Library, real implementations |
+| `fastapi-hexagonal` | FastAPI backend with hexagonal architecture |
+| `nestjs-hexagonal` | NestJS backend with hexagonal architecture |
+| `react-hexagonal` | React frontend with hexagonal architecture |
+| `code-reviewer` | Code review (correctness, security, performance, maintainability, testability, architecture) |
+| `code-simplifier` | Refactoring for clarity and maintainability |
+| `documentation-writer` | README and API documentation with curl examples |
+| `tester-qa` | E2E testing with Playwright (QA mode + Bug Hunt mode) |
+| `k3s-devops` | K3s/Flux CD infrastructure management (GitOps) |
 
-> **Note:** All agents declare `model: opus` in their frontmatter. Tools like OpenCode can override the model per-agent in their configuration (e.g., `opencode.json`).
+All agents declare `model: opus` in their frontmatter. Tools like OpenCode can override the model per-agent in their configuration.
+
+## Skills
+
+8 skills providing specialized capabilities:
+
+| Skill | Purpose |
+|-------|---------|
+| `brainstorming` | Design-first workflow: explore context, ask questions, propose approaches, write spec, review loop, then hand off to implementation |
+| `feature-implementation` | Master orchestrator: 6-phase workflow (Requirements → TDD → Implementation → QA → Docs → PR/Merge) |
+| `githubpr` | Full PR lifecycle: branch naming (`<JIRA-ID>/description`), draft PR, CI polling, merge |
+| `sonarfix` | SonarQube remediation: retrieve issues, group by severity, fix in batches, verify tests |
+| `trivyfix` | Trivy remediation: scan (fs/image/repo), group by severity and type, fix in batches, verify |
+| `dbanalyze` | Database schema analysis: SchemaCrawler lint + information_schema extraction + normalization analysis (1NF/2NF/3NF) + Alembic migration generation |
+| `popeyescan` | Kubernetes cluster health: Popeye scan with K3s noise filtering, prioritized action plan (P1/P2/P3) |
+| `frontend-design` | Production-grade UI: distinctive design, bold aesthetics, no generic AI look |
 
 ## Development Workflow
 
-All agents work together in a structured 5-phase development workflow:
+The `feature-implementation` skill orchestrates the full development cycle through 6 sequential phases:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        AI-DRIVEN DEVELOPMENT WORKFLOW                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  PHASE 1: REQUIREMENTS                                                       │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ product-owner (Claude Opus)                                          │    │
-│  │ - Clarify requirements with stakeholders                             │    │
-│  │ - Define acceptance criteria                                         │    │
-│  │ - Create user stories                                                │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                         │
-│                                    ▼                                         │
-│  PHASE 2: TEST-FIRST DEVELOPMENT                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ test-writer-* (Claude Opus)                                          │    │
-│  │ - Variants: test-writer-python, test-writer-nestjs, test-writer-react│    │
-│  │ - Write failing unit tests (TDD)                                     │    │
-│  │ - Define test doubles (fakes)                                        │    │
-│  │ - Establish coverage targets (80%+)                                  │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                         │
-│                                    ▼                                         │
-│  PHASE 3: IMPLEMENTATION                                                     │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ fastapi-hexagonal / nestjs-hexagonal / react-hexagonal               │    │
-│  │ - Implement code following hexagonal architecture                    │    │
-│  │ - Ensure all tests pass                                              │    │
-│  │ - Follow SOLID principles                                            │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                         │
-│                                    ▼                                         │
-│  PHASE 4: QUALITY ASSURANCE                                                  │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ code-reviewer → code-simplifier                                      │    │
-│  │ - Review for bugs, security issues, architecture compliance          │    │
-│  │ - Refactor for clarity without changing functionality                │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                         │
-│                                    ▼                                         │
-│  PHASE 5: DOCUMENTATION & VERIFICATION                                       │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ documentation-writer → tester-qa                                     │    │
-│  │ - Update README, API documentation                                   │    │
-│  │ - Manual/API testing verification                                    │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                              │
-│  INFRASTRUCTURE (on-demand)                                                  │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ k3s-devops (Claude Opus)                                              │    │
-│  │ - Kubernetes/GitOps infrastructure changes                           │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+  PHASE 1: REQUIREMENTS
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ product-owner                                                    │
+  │ Clarify requirements, acceptance criteria, edge cases            │
+  └──────────────────────────────┬───────────────────────────────────┘
+                                 │
+                                 ▼
+  PHASE 2: TEST-FIRST DEVELOPMENT
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ test-writer-python / test-writer-nestjs / test-writer-react      │
+  │ Write failing tests (TDD Red-Green-Refactor)                     │
+  └──────────────────────────────┬───────────────────────────────────┘
+                                 │
+                                 ▼
+  PHASE 3: IMPLEMENTATION
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ fastapi-hexagonal / nestjs-hexagonal / react-hexagonal           │
+  │ Implement using hexagonal architecture, make tests pass          │
+  └──────────────────────────────┬───────────────────────────────────┘
+                                 │
+                                 ▼
+  PHASE 4: QUALITY ASSURANCE
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ code-reviewer → code-simplifier → sonarfix → trivyfix            │
+  │ Review, simplify, fix static analysis issues, fix vulnerabilities│
+  └──────────────────────────────┬───────────────────────────────────┘
+                                 │
+                                 ▼
+  PHASE 5: DOCUMENTATION & VERIFICATION
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ tester-qa → documentation-writer                                 │
+  │ E2E testing (Playwright), update docs                            │
+  └──────────────────────────────┬───────────────────────────────────┘
+                                 │
+                                 ▼
+  PHASE 6: OPEN PR & MERGE
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ githubpr                                                         │
+  │ Branch → Push → Draft PR → CI polling → Ready → Merge            │
+  └──────────────────────────────────────────────────────────────────┘
 ```
 
-## End-to-End CI/CD Integration
+Phase 4 includes feedback loops: if sonarfix or trivyfix find issues, iterate back to implementation and re-run the check.
 
-The AI agents integrate seamlessly with your existing CI/CD pipeline. Here's the complete development cycle:
+### Brainstorming workflow (optional, before implementation)
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     END-TO-END DEVELOPMENT CYCLE                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────┐                                                            │
-│  │    JIRA      │  User writes tickets with requirements                     │
-│  │   Tickets    │                                                            │
-│  └──────┬───────┘                                                            │
-│         │                                                                    │
-│         │ MCP Atlassian                                                      │
-│         ▼                                                                    │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                     AI CODING AGENT                                   │   │
-│  │                 (Claude Code / OpenCode / Copilot)                    │   │
-│  │                                                                       │   │
-│  │  Reads ticket → Orchestrates sub-agents automatically:                │   │
-│  │                                                                       │   │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐     │   │
-│  │  │  product-   │→│ test-       │→│ [stack]-    │→│ code-       │     │   │
-│  │  │  owner      │ │ writer      │ │ hexagonal   │ │ reviewer    │     │   │
-│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘     │   │
-│  │                                                                       │   │
-│  └──────────────────────────────────┬───────────────────────────────────┘   │
-│                                     │                                        │
-│                                     ▼                                        │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                      USER PUSHES TO BRANCH                            │   │
-│  └──────────────────────────────────┬───────────────────────────────────┘   │
-│                                     │                                        │
-│                                     ▼                                        │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                         CI PIPELINE                                   │   │
-│  │                                                                       │   │
-│  │  - Build & test                                                       │   │
-│  │  - Static code analysis                                               │   │
-│  │  - Security scanning                                                  │   │
-│  │  - Coverage reports                                                   │   │
-│  └──────────────────────────────────┬───────────────────────────────────┘   │
-│                                     │                                        │
-│                                     ▼                                        │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                     AI AGENT FIXES ISSUES                             │   │
-│  │                                                                       │   │
-│  │  User: "/sonarfix" or "/trivyfix"                                     │   │
-│  │                                                                       │   │
-│  │  Agent runs remediation skills → Fixes issues automatically           │   │
-│  └──────────────────────────────────┬───────────────────────────────────┘   │
-│                                     │                                        │
-│                                     ▼                                        │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                USER PUSHES → CI → ...                                 │   │
-│  │                                                                       │   │
-│  │            (Loop until quality gate passes ✓)                         │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+For new features or creative work, invoke `brainstorming` before `feature-implementation`:
 
-### Quick Start
+1. Explore project context
+2. Ask clarifying questions (one at a time)
+3. Propose 2-3 approaches with trade-offs
+4. Present design sections, get user approval
+5. Write spec to `docs/specs/YYYY-MM-DD-<topic>-design.md`
+6. Automated spec review loop (subagent, max 5 iterations)
+7. User reviews written spec
+8. Hand off to `feature-implementation`
 
-```bash
-# 1. Start MCP services
-cd ai-driven/mcp
-cp env.atlassian.example .env.atlassian  # Configure your Jira credentials
-docker-compose up -d
-
-# 2. In your AI coding tool, just say:
-"Implement ticket PROJ-123"
-
-# The agent handles the rest: reads the ticket, orchestrates sub-agents,
-# writes tests, implements code, reviews, and commits.
-```
+Includes an optional visual companion (browser-based) for mockups and diagrams during brainstorming.
 
 ## Architecture & Principles
 
-All implementation agents enforce these architectural patterns and principles:
+All implementation agents enforce:
 
 ### Hexagonal Architecture (Ports & Adapters)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     INFRASTRUCTURE LAYER                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  REST API   │  │  Database   │  │  External Services      │  │
-│  │  Adapter    │  │  Adapter    │  │  (Queue, Cache, etc.)   │  │
-│  └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘  │
-│         │                │                      │                │
-│  ┌──────┴────────────────┴──────────────────────┴──────┐        │
-│  │                  APPLICATION LAYER                   │        │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────────┐ │        │
-│  │  │ Use Cases  │  │ Input/     │  │ DTOs           │ │        │
-│  │  │            │  │ Output     │  │                │ │        │
-│  │  │            │  │ Ports      │  │                │ │        │
-│  │  └─────┬──────┘  └────────────┘  └────────────────┘ │        │
-│  └────────┼─────────────────────────────────────────────┘        │
-│           │                                                      │
-│  ┌────────┴─────────────────────────────────────────────┐        │
-│  │                    DOMAIN LAYER                       │        │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │        │
-│  │  │ Entities   │  │ Value      │  │ Domain         │  │        │
-│  │  │            │  │ Objects    │  │ Services       │  │        │
-│  │  └────────────┘  └────────────┘  └────────────────┘  │        │
-│  └──────────────────────────────────────────────────────┘        │
-└─────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────┐
+│  INFRASTRUCTURE                                     │
+│  (adapters: REST, DB, email, external services)     │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  APPLICATION                                   │  │
+│  │  (use cases, DTOs, routes/controllers)         │  │
+│  │                                                │  │
+│  │  ┌─────────────────────────────────────────┐   │  │
+│  │  │  DOMAIN                                  │   │  │
+│  │  │  (entities, ports, services)             │   │  │
+│  │  │  Pure language — zero external imports   │   │  │
+│  │  └─────────────────────────────────────────┘   │  │
+│  └───────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────┘
 ```
 
-### SOLID Principles
+### SOLID + KISS
 
-| Principle | Description |
-|-----------|-------------|
-| **Single Responsibility** | One reason to change per class/module |
-| **Open/Closed** | Open for extension, closed for modification |
-| **Liskov Substitution** | Subtypes must be substitutable for their base types |
-| **Interface Segregation** | Many specific interfaces over one general interface |
-| **Dependency Inversion** | Depend on abstractions, not concretions |
+- **SRP**: 1 class = 1 responsibility, 1 use case = 1 business action
+- **OCP**: Extension via new adapters, never modify ports
+- **LSP**: All implementations respect their port's contract
+- **ISP**: Small, focused interfaces
+- **DIP**: Use cases depend on ports (abstractions), never on adapters
+- **KISS**: Direct transformations, no unnecessary abstractions, readable code over clever code
 
-### Test-Driven Development (TDD)
+### Testing Philosophy
 
-- Write failing tests before implementation
-- Use **test doubles (fakes)** for internal components
-- Use **mocks only** for external services
-- Target **minimum 80% code coverage**
+- **Real implementations** for all internal components (repositories, services, use cases)
+- **Mocks only** for outbound adapters toward external systems (APIs, email, S3, Stripe)
+- **TDD**: Write failing tests before implementation
+- **Coverage targets**: 80% backend, 70% frontend
 
 ## Supported Technology Stacks
 
-### Backend: FastAPI (Python)
+### FastAPI (Python)
 
 | Component | Technology |
 |-----------|------------|
@@ -308,329 +237,187 @@ All implementation agents enforce these architectural patterns and principles:
 | Package Manager | UV |
 | Validation | Pydantic V2 |
 | Testing | pytest, pytest-asyncio |
-| Containerization | Docker |
+| Domain | Pure Python + Pydantic |
 
-### Backend: NestJS (TypeScript)
+### NestJS (TypeScript)
 
 | Component | Technology |
 |-----------|------------|
 | Runtime | Node.js 20+ |
 | Package Manager | pnpm |
 | Validation | Zod |
-| Testing | Jest |
-| DI | Injection tokens |
+| Testing | Jest, Supertest |
+| DI | Injection tokens, abstract classes as ports |
 
-### Frontend: React (TypeScript)
+### React (TypeScript)
 
 | Component | Technology |
 |-----------|------------|
 | Runtime | Bun |
-| Build Tool | Vite or Next.js |
+| Build | Vite or Next.js |
 | Styling | Tailwind CSS |
-| Data Fetching | React Query |
-| Linting/Formatting | Biome |
+| Data Fetching | TanStack Query |
+| Validation | Zod |
+| Testing | Vitest, React Testing Library |
+| Linting | Biome |
 
-### Infrastructure: K3s DevOps
+### K3s Infrastructure
 
 | Component | Technology |
 |-----------|------------|
 | Kubernetes | K3s |
 | GitOps | Flux CD |
-| Auth | Logto |
+| Identity | Logto (OIDC/OAuth2) |
+| Auth Gateway | OAuth2 Proxy |
 | Secrets | OpenBao |
 | Storage | MinIO |
-| DNS/CDN | Cloudflare |
+| Observability | OpenObserve |
+| DNS/Access | Cloudflare Tunnels |
+| CI/CD | GitHub Actions |
 
 ## MCP Integrations
 
-The system integrates with external tools via Model Context Protocol (MCP):
+External tool integrations via Model Context Protocol, served through Docker Compose:
 
-### Atlassian (Jira/Confluence)
+### Atlassian (Jira + Confluence)
 
-Jira issue management and Confluence documentation integration.
+Issue management and documentation. Runs on port 9000.
 
-```json
-{
-  "atlassian": {
-    "type": "remote",
-    "url": "http://localhost:9000/mcp",
-    "enabled": true
-  }
-}
+```bash
+# Start the MCP services
+cd ai-driven/mcp
+cp env.atlassian.example .env.atlassian  # Fill in your credentials
+docker compose up -d
 ```
 
 ### Context7
 
-Library documentation and code examples lookup. Runs in docker-compose on port 9021.
+Library documentation and code examples lookup. Runs on port 9021.
 
-```json
-{
-  "context7": {
-    "type": "remote",
-    "url": "http://localhost:9021/mcp",
-    "enabled": true
-  }
-}
-```
+### Chrome DevTools (Claude Code only)
 
-### Chrome DevTools
-
-Browser inspection and debugging via Chrome DevTools Protocol. Runs as a local npx command.
-
-```json
-{
-  "chrome-devtools": {
-    "command": "npx",
-    "args": ["-y", "chrome-devtools-mcp@latest"]
-  }
-}
-```
+Browser inspection and E2E testing via Chrome DevTools Protocol. Runs as a local npx command, configured in `.claude.json`.
 
 ## Installation
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) runtime
 - [Docker](https://docker.com) and Docker Compose
-- Access to one of the supported AI tools (OpenCode, Claude Code, or GitHub Copilot)
+- Access to one of the supported AI tools
 
-### Setting Up MCP Servers
-
-1. Navigate to the MCP directory:
+### 1. Start MCP services
 
 ```bash
 cd ai-driven/mcp
-```
-
-2. Create environment files from templates:
-
-```bash
 cp env.atlassian.example .env.atlassian
-cp env.sonar.example .env.sonar
+# Edit .env.atlassian with your Jira/Confluence credentials
+docker compose up -d
 ```
 
-3. Edit the environment files with your credentials.
+### 2. Set up your AI tool
 
-4. Start the MCP services:
-
-```bash
-docker-compose up -d
-```
-
-### Setting Up OpenCode
-
-1. Copy the `.opencode` directory to your project root:
+#### Claude Code
 
 ```bash
-cp -r ai-driven/opencode/.opencode /path/to/your/project/
-```
+# Copy the .claude directory to your project
+cp -r ai-driven/claude/.claude /path/to/your/project/
 
-2. Copy the shared agents:
-
-```bash
-cp ai-driven/agents/*.md /path/to/your/project/.opencode/agents/
-```
-
-3. Install plugin dependencies:
-
-```bash
-cd /path/to/your/project/.opencode
-bun install
-```
-
-4. OpenCode will automatically detect the configuration.
-
-### Setting Up Claude Code
-
-1. Create the `.claude` directory and copy the workflow instructions:
-
-```bash
-mkdir -p /path/to/your/project/.claude
-cp ai-driven/claude/.claude/CLAUDE.md /path/to/your/project/.claude/
-```
-
-2. Copy the MCP configuration template:
-
-```bash
+# Copy MCP config template
 cp ai-driven/claude/.claude.example.json /path/to/your/project/.claude.json
+
+# Copy shared agents into the .claude directory
+cp ai-driven/agents/*.md /path/to/your/project/.claude/agents/
+
+# Copy shared skills into the .claude directory
+cp -r skills/* /path/to/your/project/.claude/skills/
 ```
 
-3. Copy the shared agents:
+#### OpenCode
 
 ```bash
-cp -r ai-driven/agents /path/to/your/project/.claude/
+# Copy the .opencode directory to your project
+cp -r ai-driven/opencode/.opencode /path/to/your/project/
+
+# Copy shared agents
+cp ai-driven/agents/*.md /path/to/your/project/.opencode/agents/
+
+# Copy shared skills
+cp -r skills/* /path/to/your/project/.opencode/skills/
+
+# Install plugin dependencies
+cd /path/to/your/project/.opencode && bun install
 ```
 
-4. Optionally copy skills:
+#### GitHub Copilot
 
 ```bash
-cp -r ai-driven/claude/.claude/skills /path/to/your/project/.claude/
-```
+# Copy .github directory to your project
+cp -r ai-driven/copilot/.github /path/to/your/project/
 
-### Setting Up GitHub Copilot
-
-1. Create the `.github` directory if it doesn't exist:
-
-```bash
-mkdir -p /path/to/your/project/.github
-```
-
-2. Copy the workflow instructions:
-
-```bash
-cp ai-driven/copilot/.github/copilot-instructions.md /path/to/your/project/.github/
-```
-
-3. Copy the MCP configuration:
-
-```bash
+# Copy MCP config
 cp ai-driven/copilot/mcp.json /path/to/your/project/
+
+# Copy shared agents
+cp ai-driven/agents/*.md /path/to/your/project/.github/agents/
+
+# Copy shared skills
+cp -r skills/* /path/to/your/project/.github/skills/
 ```
 
-4. Copy the shared agents:
+### 3. Usage
 
 ```bash
-cp -r ai-driven/agents /path/to/your/project/.github/
+# In your AI coding tool, say:
+"Implement ticket PROJ-123"
+
+# Or invoke specific skills:
+"/brainstorming"             # Design-first workflow
+"/sonarfix"                  # Fix SonarQube issues
+"/trivyfix"                  # Fix Trivy vulnerabilities
+"/dbanalyze"                 # Audit database schema
+"/popeyescan"                # Audit K3s cluster health
 ```
-
-## Skills
-
-Additional skills are available for enhanced capabilities:
-
-### sonarfix
-
-SonarQube issue remediation workflow. Retrieves issues via MCP, groups them, presents a fix plan, and implements fixes in batches with test verification.
-
-**Available for:** Claude Code, GitHub Copilot, OpenCode
-
-### trivyfix
-
-Trivy vulnerability remediation workflow. Runs trivy CLI scans, groups findings by severity and type, presents a fix plan, and implements fixes in batches with verification.
-
-**Available for:** Claude Code, GitHub Copilot, OpenCode
-
-### feature-implementation
-
-Agent-based development workflow for implementation tasks. Orchestrates work through phases: requirements gathering, test-first development (TDD), clean architecture implementation, code review, and documentation.
-
-**Available for:** Claude Code, GitHub Copilot, OpenCode
-
-### frontend-design
-
-Creates distinctive, production-grade UIs that avoid generic "AI-generated" aesthetics. Focuses on unique visual identity, intentional design choices, and polished user experiences.
-
-**Available for:** Claude Code, GitHub Copilot, OpenCode
-
-## Usage Examples
-
-### Starting a New Feature
-
-```
-1. Invoke product-owner:
-   "I need to implement user authentication with OAuth2"
-
-2. Invoke test-writer:
-   "Write tests for the authentication use cases defined by product-owner"
-
-3. Invoke fastapi-hexagonal (or nestjs-hexagonal):
-   "Implement the authentication feature to make all tests pass"
-
-4. Invoke code-reviewer:
-   "Review the authentication implementation"
-
-5. Invoke code-simplifier:
-   "Refactor the authentication code for better clarity"
-
-6. Invoke documentation-writer:
-   "Update the README with authentication documentation"
-
-7. Invoke tester-qa:
-   "Test the authentication endpoints manually"
-```
-
-### Infrastructure Changes
-
-```
-1. Invoke k3s-devops:
-   "Add a new Redis deployment for session caching"
-```
-
-## File Naming Conventions
-
-| Type | Convention | Example |
-|------|------------|---------|
-| React Components | PascalCase.tsx | `UserProfile.tsx` |
-| React Hooks | camelCase.ts | `useUserProfile.ts` |
-| Utilities | camelCase.ts | `formatDate.ts` |
-| Python modules | snake_case.py | `user_repository.py` |
-| Tests | *.test.ts/tsx or *_test.py | `UserService.test.ts` |
 
 ## Customization
 
-### Adding New Agents
+### Adding a new agent
 
-1. Create a new markdown file in `ai-driven/agents/`:
+Create a markdown file in `ai-driven/agents/`:
 
 ```markdown
 ---
-name: my-custom-agent
-description: Description of what the agent does
-model: claude-sonnet
-tools:
-  - Read
-  - Glob
-  - Grep
-  - Edit
-  - Write
+name: my-agent
+description: What this agent does
+model: opus
 ---
 
-# My Custom Agent
+# My Agent
 
-Instructions for the agent...
+Instructions...
 ```
 
-2. Copy to the appropriate tool configuration directory.
+Then copy it to the relevant tool directories.
 
-3. For OpenCode, also update `opencode.json` with the agent configuration.
+### Adding a new skill
 
-### Modifying Agent Permissions
+Create a directory in `skills/` with a `SKILL.md`:
 
-Adjust the `tools` list in the agent's YAML frontmatter:
+```markdown
+---
+name: my-skill
+description: What this skill does
+---
 
-```yaml
-tools:
-  - Read      # Read files
-  - Glob      # Find files by pattern
-  - Grep      # Search file contents
-  - Edit      # Modify existing files
-  - Write     # Create new files
-  - Bash      # Execute shell commands
+# My Skill
+
+Workflow and instructions...
 ```
 
-### Changing AI Models
-
-Update the `model` field in the agent's frontmatter:
-
-```yaml
-model: claude-sonnet  # For complex tasks requiring deep reasoning
-model: claude-haiku   # For simpler, cost-effective tasks
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## License
-
-MIT
+Then copy it to the relevant tool directories.
 
 ## Resources
 
-- [OpenCode Documentation](https://opencode.ai/docs)
-- [OpenCode GitHub](https://github.com/anomalyco/opencode)
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [OpenCode Documentation](https://opencode.ai/docs)
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
