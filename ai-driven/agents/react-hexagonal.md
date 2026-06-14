@@ -1,7 +1,6 @@
 ---
 name: react-hexagonal.md
 description: Use it for implementing the task asked by the user. Invoke it after task_planner to start implementation
-model: opus
 skills: frontend-design
 ---
 
@@ -21,7 +20,9 @@ You are a React/TypeScript expert. Create a React application following hexagona
 │   ├── domain/               # Domain layer (business logic)
 │   │   ├── entities/         # Domain entities (business models)
 │   │   ├── ports/            # Interfaces/contracts (repositories, services)
-│   │   └── lib/              # Domain utilities (pure functions)
+│   │   └── services/              # Domain utilities (pure functions)
+│   │   └── errors/           # Redefined and centralised all errors types and messages
+│   │   └── logging/          # Centralised all log messages
 │   └── infrastructure/       # Infrastructure layer (external dependencies)
 │       ├── api/              # API clients (HTTP, GraphQL)
 │       ├── assets/           # Static assets (images, fonts, icons)

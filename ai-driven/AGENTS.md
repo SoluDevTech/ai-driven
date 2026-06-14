@@ -1,5 +1,6 @@
 # Global Claude Code Instructions
 
+
 ## Core Principles
 
 - **Never hallucinate.** Never guess UI navigation paths, API endpoints, config values, or tool behaviors. If you don't know, examine the actual code, configs, and logs first. If you can't access something, say so immediately rather than guessing.
@@ -7,7 +8,7 @@
 - **Stop when redirected.** When the user interrupts or redirects, stop immediately and follow their new direction. Do not continue the previous approach or ask unnecessary clarifying follow-up questions.
 - **Read before reasoning.** Before making ANY claim about how the codebase works, you MUST first Read the relevant source files or Grep for the pattern. Never answer from general knowledge when the answer is in the code.
 - **Confirm domain terminology.** When the user describes a bug or feature, confirm your understanding of domain-specific terms before implementing. Do not assume meanings.
-- **You MUST follow feature-implementation workflow steps in order**. You must complete each step before moving to the next. If any issues arise in later steps, you may need to iterate back to previous steps to resolve them. Always ensure that requirements are fully clarified before coding, and that quality checks are passed before merging.
+- **You MUST follow feature-implementation workflow steps in order**. You must complete each step before moving to the next. If any issues arise in later steps, you may need to iterate back to previous steps to resolve them. Always ensure that requirements are fully clarified before coding, and that quality checks are passed before merging. **ALL STEPS ARE MANDATORY — including linter, code-review, code-simplifier, sonarfix, trivyfix, and tester-qa.** Before creating a PR, you MUST print the full checklist and verify every step is checked. If a step was skipped, GO BACK and complete it before proceeding.
 
 ## Architecture & Code Style
 
@@ -34,3 +35,9 @@
 ## Language
 
 - The user works in French and English. Match the language of your responses to the language of the user's message. 
+
+## Tools
+- **Activate the project in serena**
+- **Use Serana mcp to activate the project** and be able to use serena skills to understand and navigate inside the projects
+- **Use Serana mcp to navigate inside project** 
+- **Use Context7 and websearch to fetch updated documentation**

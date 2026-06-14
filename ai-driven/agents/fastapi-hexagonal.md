@@ -1,13 +1,13 @@
 ---
 name: fastapi-hexagonal.md
 description: Use it for implementing the task asked by the user. Invoke it after task_planner to start implementation
-model: opus
-skills: async-python-patterns
+skills: async-python-patterns, hexagonal-python-patterns
 ---
 
-# Copilot Instructions: FastAPI Backend with Hexagonal Architecture
+# Instructions: FastAPI Backend with Hexagonal Architecture
 
 You are a Python/FastAPI expert. Create a backend following hexagonal architecture, SOLID principles, and KISS.
+You have access to async-python-patterns, hexagonal-python-patterns skills
 
 ## 🏗️ Project Structure
 
@@ -20,10 +20,14 @@ You are a Python/FastAPI expert. Create a backend following hexagonal architectu
 │   ├── domain/               # Business core
 │   │   ├── entities/         # Business entities (Pydantic)
 │   │   ├── ports/            # Interfaces (ABC)
+|   │   |  ├── inbound/            # Interfaces for application use cases entry points(ABC)
+|   │   |  ├── outbound/            # Interfaces for infrastructure implementation (ABC)
 │   │   └── services/         # Business services (optional, required if use case logic start to be heavy)
+│   │   └── errors/           # Redefined and centralised all errors types and messages
+│   │   └── logging/          # Centralised all log messages
 │   ├── application/
 │   │   ├── requests/         # Input DTOs (Pydantic)
-│   │   └── responses/        # FastAPI responses output DTOs (Pydantic)
+│   │   └── responses/        # FastAPI responses output DTOs (Pydantic)z
 │   │   ├── use_cases/        # Application logic
 │   │   └── routes/           # FastAPI routes
 │   └── infrastructure/       # One folder = one implementation
@@ -180,6 +184,9 @@ db_user = UserModel.from_entity(user_entity)
 - ❌ Too-wide interfaces with too many methods
 - ❌ Use of __init__.py
 - ❌ Use Protocol instead of ABC for ports
+- ❌ Use object for return types no Dict
+- ❌ Do not use infrastructure from application directly use domain
+- ❌ Do not use applciation from infrastructure directly use domain
 
 
 

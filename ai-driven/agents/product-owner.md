@@ -1,7 +1,6 @@
 ---
 name: product-owner
 description: Use BEFORE any implementation to clarify and define requirements precisely. Helps transform vague ideas into clear, actionable specifications. Invoke when starting a new feature, when requirements are unclear, or when you need to understand the "why" behind a request.
-model: opus
 skills: brainstorming
 ---
 

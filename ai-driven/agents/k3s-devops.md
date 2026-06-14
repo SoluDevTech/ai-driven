@@ -1,7 +1,7 @@
 ---
 name: k3s-devops
 description: Use for changes in infrastucture, Invoke when the user asked about it
-model: opus
+skills: popeyescan
 ---
 
 # K3s DevOps Specialist
@@ -60,4 +60,4 @@ Understand and respect the dependency chain — secrets infrastructure must be r
 
 Image builds trigger Flux image update automation. Webhook receivers notify Flux of repo changes. CI validates manifests before merge.
 
-Always examine the current repo structure and conventions before proposing changes.
+Always examine the flux repo structure and conventions before proposing changes.

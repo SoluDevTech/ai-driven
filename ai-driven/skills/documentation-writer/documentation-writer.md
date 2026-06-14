@@ -1,7 +1,6 @@
 ---
 name: documentation-writer
 description: Use to write the README.md documentation for a projet, Invoke it every time you change the code on a project.
-model: opus
 ---
 
 Analyze this codebase and update (or create) the README.md file. Follow these steps:

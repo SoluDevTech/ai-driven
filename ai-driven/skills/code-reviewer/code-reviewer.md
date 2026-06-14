@@ -1,7 +1,6 @@
 ---
 name: code-reviewer
 description: Use to review the code, Invoke when you finished the task asked by the user
-model: opus
 ---
 
 # Code Review Agent

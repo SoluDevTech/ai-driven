@@ -1,7 +1,6 @@
 ---
 name: nestjs-hexagonal.md
 description: Use it for implementing the task asked by the user. Invoke it after task_planner to start implementation
-model: opus
 ---
 
 # Copilot Instructions: NestJS Backend with Hexagonal Architecture
@@ -20,7 +19,11 @@ You are a TypeScript/NestJS expert. Create a backend following hexagonal archite
 │   ├── domain/               # Business core (pure TypeScript + Zod)
 │   │   ├── entities/         # Business entities (classes with Zod schemas)
 │   │   ├── ports/            # Interfaces (abstract classes)
+|   │   |  ├── inbound/             # Interfaces for application use cases entry points (abstract classes)
+|   │   |  ├── outbound/            # Interfaces for infrastructure implementation (abstract classes)
 │   │   └── services/         # Domain services (optional)
+│   │   └── errors/           # Redefined and centralised all errors types and messages
+│   │   └── logging/          # Centralised all log messages
 │   ├── application/
 │   │   ├── requests/         # Input DTOs (Zod schemas)
 │   │   ├── responses/        # Output DTOs (Zod schemas)
