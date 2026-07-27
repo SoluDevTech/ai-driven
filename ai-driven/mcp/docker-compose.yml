@@ -19,15 +19,3 @@ services:
     ports:
       - "9021:8080"
     command: []
-
-
-  serena:
-    image: ghcr.io/oraios/serena:latest
-    container_name: mcp-serena
-    restart: unless-stopped
-    ports:
-      - "9121:9121"
-      - "24282:24282"
-    volumes:
-      - /Users/yohan/git/soludev:/workspaces/projects/soludev
-    command: ["serena", "start-mcp-server", "--transport", "streamable-http", "--port", "9121", "--host", "0.0.0.0"]
