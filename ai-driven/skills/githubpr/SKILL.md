@@ -131,19 +131,50 @@ Exit codes:
 
 ## 5. Merge
 
-```bash
-# Squash merge (recommended — clean history)
-gh pr merge <PR_NUMBER> --squash --delete-branch
+### Two distinct merge scenarios
 
-# Merge commit (if project convention requires it)
-gh pr merge <PR_NUMBER> --merge --delete-branch
+The merge method depends on whether the target is a **feature branch**
+(deleted after merge) or a **long-lived integration branch** (`dev`, `main`).
+
+#### A. Feature branch → `dev` (or `main` if no `dev` exists)
+
+Use the GitHub UI / `gh` CLI with **rebase and merge**. The feature branch
+is deleted after, so commit-hash rewriting is harmless.
+
+```bash
+gh pr merge <PR_NUMBER> --rebase --delete-branch
 ```
 
-After merge, switch back to main:
+#### B. `dev` → `main` (long-lived branch → long-lived branch)
+
+**NEVER use the GitHub merge button** (`--rebase`, `--squash`, or `--merge`).
+All three rewrite commit hashes, which breaks `dev`: it is no longer an
+ancestor of `main`, causing conflicts and requiring force-pushes on the
+next `dev → main` cycle.
+
+Instead, merge in CLI with a **true fast-forward**:
+
 ```bash
-git checkout main && git pull origin main
-git remote prune origin  # clean up deleted remote branches
+git fetch origin main dev
+git checkout main
+git pull --ff-only origin main
+git merge --ff-only dev
+git push origin main
 ```
+
+This advances `main` to `dev`'s commit **without rewriting hashes**.
+`dev` remains an exact ancestor of `main` → zero conflicts, zero
+force-push, on every subsequent cycle.
+
+> The PR `dev → main` is created for CI + review, but **merged via CLI**.
+> Once `main` is pushed, the PR closes automatically. Do not
+> `--delete-branch` — `dev` is long-lived.
+
+If `dev` is not a strict ancestor of `main` (someone committed directly
+to `main`), `--ff-only` will refuse. Fix by rebasing `dev` onto `main`
+first, then retry the fast-forward.
+
+After merge, both branches point to the same commit — no resync needed.
 
 ---
 
@@ -174,8 +205,13 @@ CI_EXIT=$?
 
 # 6. Merge if green
 if [ $CI_EXIT -eq 0 ]; then
-  gh pr merge $PR_NUMBER --squash --delete-branch
-  git checkout main && git pull origin main
+  # Feature → dev: rebase merge + delete branch
+  gh pr merge $PR_NUMBER --rebase --delete-branch
+
+  # dev → main: CLI fast-forward (see section 5B) — do NOT use gh pr merge
+  git checkout main && git pull --ff-only origin main
+  git merge --ff-only dev
+  git push origin main
 else
   echo "CI failed on $TICKET — skipping"
 fi
@@ -186,7 +222,9 @@ fi
 ## Agent rules
 
 - **Never merge** if `wait-ci.sh` exit code != 0
-- **Always squash merge** unless the project explicitly requires otherwise
-- **Always `--delete-branch`** to keep the repo clean
+- **Feature → `dev`**: use `gh pr merge --rebase --delete-branch`
+- **`dev` → `main`**: **never use `gh pr merge`**. Use CLI `git merge --ff-only dev` + `git push origin main` (see section 5B)
+- **Never `--delete-branch` on `dev` or `main`** — they are long-lived
+- **Never force-push `dev` or `main`**
 - On CI failure: log the ticket and **continue** to the next one — do not block the pipeline
 - PR title must always start with the ticket ID: `PROJ-123: ...`
