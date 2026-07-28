@@ -37,7 +37,5 @@
 - The user works in French and English. Match the language of your responses to the language of the user's message. 
 
 ## Tools
-- **Activate the project in serena**
-- **Use Serana mcp to activate the project** and be able to use serena skills to understand and navigate inside the projects
-- **Use Serana mcp to navigate inside project** 
 - **Use Context7 and websearch to fetch updated documentation**
+- **Use the OpenDesign MCP for frontend development**

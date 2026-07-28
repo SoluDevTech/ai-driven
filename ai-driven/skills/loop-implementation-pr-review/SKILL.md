@@ -9,7 +9,7 @@ You orchestrate an implementation loop that wraps the **feature-implementation**
 
 - Respect the global AGENTS.md and the invoked skills/agents.
 - Backend → invoke the `fastapi-hexagonal` agent and have it use skills: `hexagonal-python-patterns`, `async-python-patterns`, `performance-audit`.
-- Frontend / React App → invoke the `react-hexagonal` agent and have it use skills: `frontend-design`, `vercel-react-best-practices`, `web-design-guidelines`, `performance-audit`. Respect the Open Design maquette and the `<app-name>` design system.
+- Frontend / React App → invoke the `react-hexagonal` agent and have it use skills: `frontend-design`, `vercel-react-best-practices`, `web-design-guidelines`, `performance-audit`. Use OpenDesign MCP Respect the Open Design maquette and the `<app-name>` design system.
 
 ## QA gate (do not skip)
 
