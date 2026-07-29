@@ -1,11 +1,11 @@
 ---
 name: loop-implementation-review
-description: Implementation loop wrapping feature-implementation. Adds mandatory NEW e2e QA tests in @soludev-compose-apps/<app_name>, a zero-critical-issues code review gate, one draft PR per modified repo, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green.
+description: Implementation loop wrapping feature-implementation. Adds mandatory NEW e2e QA tests in @soludev-compose-apps/<app_name>, a zero-critical-issues code review gate, No PR on github, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green.
 ---
 
 ---
 name: loop-implementation-pr-review
-description: Implementation loop wrapping feature-implementation. Adds mandatory NEW e2e QA tests in @soludev-compose-apps/<app_name>, a zero-critical-issues code review gate, one draft PR per modified repo, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green.
+description: Implementation loop wrapping feature-implementation. Adds mandatory NEW e2e QA tests in @soludev-compose-apps/<app_name>, a zero-critical-issues code review gate, No PR on Github, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green.
 ---
 
 You orchestrate an implementation loop that wraps the **feature-implementation** skill. Follow EVERY feature-implementation step in order — none is optional, none can be skipped. On top of it, apply the rules below.
