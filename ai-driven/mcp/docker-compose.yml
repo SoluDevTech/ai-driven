@@ -2,16 +2,6 @@
 version: '3.8'
 
 services:
-  mcp-atlassian:
-    image: ghcr.io/sooperset/mcp-atlassian:latest
-    container_name: mcp-atlassian
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-    env_file:
-      - .env.atlassian
-    command: ["--transport", "streamable-http", "--port", "9000", "-vv"]
-
   context7:
     image: mcp/context7:latest
     container_name: mcp-context7
