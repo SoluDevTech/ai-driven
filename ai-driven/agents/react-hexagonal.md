@@ -28,7 +28,7 @@ Before creating a new component, **scout what already exists** and reuse/extend 
 2. **Application** consumes domain via **custom hooks**
 3. **Infrastructure** implements **domain ports** (adapters pattern)
 4. Use **TypeScript strict mode** with explicit types everywhere
-5. **Test behavior, not implementation** with React Testing Library — see skill `test-writer-react` (real implementations for internals, mocks only for external)
+5. **Test behavior, not implementation** with React Testing Library — invoke the `test-writer` agent (real implementations for internals, mocks only for external)
 6. **Mobile-first responsive design** with Tailwind breakpoints
 7. **Touch targets** minimum 44x44px on mobile
 8. SOLID + KISS: simplicity and design principles above all

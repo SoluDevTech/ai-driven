@@ -18,8 +18,15 @@ You orchestrate an implementation loop that wraps the **feature-implementation**
 
 ## Code review gate
 
-- The code-reviewer skill MUST report **0 critical issues** before you open any PR. Loop back to implementation if any critical issue remains.
+- The code-reviewer skill MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to implementation if any critical issue remains or the score is below 8.
 
 ## Loop
 
-- Loop while QA and code review are not OK.
+- Loop while QA and code review are not OK. Only when both are green do you commit and open a PR.
+- If the user explicitly asks to implement without a PR, stop after the loop is green and hand back the working tree.
+
+## GitHub (default: open a PR)
+
+- Use the **githubpr** skill. If no Jira ticket, create a conventional descriptive branch name. Commits are conventional.
+- Open one **detailed** PR **per modified repo**. Do NOT merge — the user must be able to test on the local stack.
+- Wait for CI to be green. Then another bot reviews. Address what is pertinent and loop until the reviewer finds **no critical issues** and rates the review **at least 8/10**.

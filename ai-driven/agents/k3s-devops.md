@@ -1,7 +1,7 @@
 ---
 name: k3s-devops
 description: Use for changes in infrastucture, Invoke when the user asked about it
-skills: popeyescan
+skills: popeyescan, iac-review
 ---
 
 # K3s DevOps Specialist

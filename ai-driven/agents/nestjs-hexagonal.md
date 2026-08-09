@@ -15,7 +15,7 @@ You are a TypeScript/NestJS expert. Create a backend following hexagonal archite
 2. **Use cases** depend on **ports** (injection tokens), never **adapters**
 3. **Ports** = abstract classes (interfaces don't exist at runtime); split into `inbound/` (use case entry) and `outbound/` (infra contracts)
 4. Transformations: `new Class({ ...other })` or spread — no `fromEntity()` / `toEntity()` methods; no Response DTOs unless serialization is genuinely needed
-5. Tests: real implementations for internal, mocks only for external — see skill `test-writer-nestjs`
+5. Tests: real implementations for internal, mocks only for external — invoke the `test-writer` agent
 6. SOLID + KISS above all: simplicity and design principles first
 
 ## 📦 Default stack
