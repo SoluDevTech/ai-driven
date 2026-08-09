@@ -66,7 +66,7 @@ digraph brainstorming {
 }
 ```
 
-**The terminal state is invoking feature-implementation.** Do NOT invoke frontend-design, mcp-builder, or any other implementation skill. The ONLY skill you invoke after brainstorming is feature-implementation.
+**The terminal state is invoking feature-implementation.** Do NOT invoke mcp-builder or any other implementation skill. The ONLY skill you invoke after brainstorming is feature-implementation.
 
 ## The Process
 

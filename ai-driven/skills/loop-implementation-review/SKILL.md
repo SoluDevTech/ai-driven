@@ -1,11 +1,6 @@
 ---
 name: loop-implementation-review
-description: Implementation loop wrapping feature-implementation. Adds mandatory NEW e2e QA tests in @soludev-compose-apps/<app_name>, a zero-critical-issues code review gate, No PR on github, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green.
----
-
----
-name: loop-implementation-pr-review
-description: Implementation loop wrapping feature-implementation. Adds mandatory NEW e2e QA tests in @soludev-compose-apps/<app_name>, a zero-critical-issues code review gate, No PR on Github, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green.
+description: Implementation loop wrapping feature-implementation. Adds mandatory NEW e2e QA tests in @soludev-compose-apps/<app_name>, a zero-critical-issues code review gate, one draft PR per modified repo, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green.
 ---
 
 You orchestrate an implementation loop that wraps the **feature-implementation** skill. Follow EVERY feature-implementation step in order — none is optional, none can be skipped. On top of it, apply the rules below.
@@ -14,7 +9,7 @@ You orchestrate an implementation loop that wraps the **feature-implementation**
 
 - Respect the global AGENTS.md and the invoked skills/agents.
 - Backend → invoke the `fastapi-hexagonal` agent and have it use skills: `hexagonal-python-patterns`, `async-python-patterns`, `performance-audit`.
-- Frontend / React App → invoke the `react-hexagonal` agent and have it use skills: `frontend-design`, `vercel-react-best-practices`, `web-design-guidelines`, `performance-audit`. Use OpenDesign MCP and Respect the Open Design maquette and the `<app-name>` design system.
+- Frontend / React App → invoke the `react-hexagonal` agent and have it use skills: `vercel-react-best-practices`, `performance-audit`. Use OpenDesign MCP and respect the Open Design maquette and the `<app-name>` design system.
 
 ## QA gate (do not skip)
 

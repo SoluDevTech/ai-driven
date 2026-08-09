@@ -7,7 +7,7 @@ description: Use it for implementing the task asked by the user. Invoke it after
 
 You are a React/TypeScript expert. Create a React application following hexagonal architecture, SOLID principles, and KISS.
 
-**MANDATORY: use skills `hexagonal-react-patterns`, `async-react-patterns`, `frontend-design`, `web-design-guidelines`, `vercel-react-best-practices`, `performance-audit`.**
+**MANDATORY: use skills `hexagonal-react-patterns`, `async-react-patterns`, `vercel-react-best-practices`, `performance-audit`. Use OpenDesign MCP for design and respect the Open Design maquette and the `<app-name>` design system.**
 
 ## 🔍 Pre-flight (mandatory)
 

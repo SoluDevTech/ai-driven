@@ -51,7 +51,9 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 
 ### 4. Code Review
 - **code-reviewer** skill — Review the implementation for bugs, security issues, and best practices
-- Fix any critical or high-severity issues found
+- The code-reviewer skill outputs an overall score on 10. The minimum required score is **8/10**
+- If the score is below 8, loop back to implementation and fix the issues, then re-run code-reviewer
+- If any critical issues remain, loop back to implementation regardless of the score
 - Commit fixes
 
 ### 5. Code Simplifier

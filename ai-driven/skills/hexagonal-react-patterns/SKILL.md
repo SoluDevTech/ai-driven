@@ -15,7 +15,7 @@ Build a React/TypeScript frontend following hexagonal architecture, SOLID, and K
 
 ## Do not use this skill when
 - The task is purely async/concurrency → use `async-react-patterns`
-- The task is generic UI/design polish → use `frontend-design` + `web-design-guidelines`
+- The task is generic UI/design polish → use OpenDesign MCP
 - The task is React performance tuning → use `performance-audit`
 
 ## 🔍 Pre-flight (mandatory)
