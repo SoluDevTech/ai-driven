@@ -28,6 +28,18 @@ Before creating a new component, **scout what already exists** and reuse/extend 
 - Styling variants belong in CVA files under `lib/ui/*-variants.ts` — **never** define a local `Record<Variant, string>` map inside a component when a `*-variants.ts` file already exists; add the variant there instead.
 - ❌ Do not reimplement an existing UI primitive (e.g. a Badge with raw `<span>`s + a local class map) — use/enrich the real one.
 
+## 🛡️ Edge cases (mandatory handling)
+Every component, hook, and adapter MUST handle edge cases defensively, not just the happy path. During implementation, cover:
+- **Null / undefined props** — optional props default safely; render fallback / empty state, never crash on `null` or `undefined`
+- **Empty / boundary values** — empty array `[]`, empty string `""`, `0`, single-item list, very long string (truncation/overflow), very large list (virtualization/pagination); handle with explicit empty state UI
+- **Loading / error / empty states** — every async component must handle all three: loading skeleton, error message + retry, empty state — not just the success state
+- **Async edge cases** — slow response, network error, aborted request, race condition (stale closure, outdated response arriving after newer one); use AbortController and TanStack Query's stale-ness handling
+- **User interaction edge cases** — double-click submit (disable button or debounce), disabled state, keyboard navigation, form submission with invalid data (Zod validation feedback)
+- **External adapter failure** — API client throws or times out; catch in the hook/adapter, surface error state to the component, never let it crash the tree
+- **Accessibility edge cases** — missing aria-label fallbacks, empty children, RTL languages, very long content overflow
+
+If the component/hook has validation logic or business rules, enforce them with Zod schemas and render the correct error/fallback UI when violated.
+
 ## 🎯 Core workflow
 1. **Pre-flight** — read repo `AGENTS.md`; confirm stack, tokens, test runner, linter.
 2. **Reuse-first scan** — survey existing components/hooks before creating new ones.

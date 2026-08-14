@@ -32,6 +32,18 @@ A stub that diverges silently from the real implementation produces tests that p
 5. **Write tests** — AAA pattern, explicit names, one logical behavior per test.
 6. **Run** — `npm run test` (see `references/commands.md`).
 
+## 🛡️ Edge cases (mandatory coverage)
+Every test suite MUST cover edge cases, not just the happy path. For each use case / controller / service / adapter under test, include tests for:
+- **Null / undefined inputs** — pass `null` / `undefined` where a value is expected, assert the correct exception is thrown
+- **Empty / boundary values** — empty array `[]`, empty string `""`, `0`, negative numbers, `new Date(0)`, single-element collections
+- **Off-by-one boundaries** — first/last index, page 1, page size boundary, offset equals total count
+- **Invalid / malformed input** — wrong type, Zod schema validation failure, out-of-range enum value, oversized payload, missing required field
+- **Concurrency / race conditions** — duplicate concurrent requests, idempotency key replay (when applicable)
+- **External adapter failure** — outbound adapter throws, returns error, times out, returns empty — assert the use case handles it gracefully (no silent swallow)
+- **State transitions** — already-exists, not-found, already-deleted, duplicate creation
+
+If the feature under test has domain invariants or business rules, add at least one test per invariant that violates it and asserts the correct domain error.
+
 ## What you never do
 - Provide an `InMemoryXxxRepository` or any other fake for an internal implementation
 - Mock a use case, domain service, or domain object

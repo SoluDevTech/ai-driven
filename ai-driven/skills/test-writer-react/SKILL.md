@@ -32,6 +32,18 @@ A stub/fake that diverges silently from the real implementation produces tests t
 5. **Write tests** — AAA pattern, query by role, explicit names, one logical behavior per test.
 6. **Run** — `pnpm vitest` (see `references/commands.md`).
 
+## 🛡️ Edge cases (mandatory coverage)
+Every test suite MUST cover edge cases, not just the happy path. For each component / hook / service under test, include tests for:
+- **Null / undefined props** — pass `null` or `undefined` to optional props, assert graceful rendering (no crash, shows fallback/empty state)
+- **Empty / boundary values** — empty array `[]`, empty string `""`, `0`, single-item list, very long string (truncation/overflow), very large list (virtualization/pagination)
+- **Loading / error / empty states** — assert the component renders loading skeleton, error message, and empty state correctly (not just the success state)
+- **Async edge cases** — slow API response, network error, aborted request, race condition (fast response arrives after slow one), Suspense fallback
+- **User interaction edge cases** — double-click submit (debounce/throttle), disabled button click, keyboard navigation, form submission with invalid data
+- **MSW error handlers** — add MSW handlers returning 4xx / 5xx / network error / empty response, not just 200 happy path
+- **Accessibility edge cases** — missing aria-label, no children, RTL languages, very long content
+
+If the component/hook has validation logic or business rules, add at least one test per rule that violates it and asserts the correct error/fallback UI.
+
 ## What you never do
 - Write a fake store, fake context, or fake hook to replace a real internal implementation
 - Mock a React component under test or any component in its subtree

@@ -49,6 +49,18 @@ For per-layer file templates, load the relevant reference file below.
 - **Centralized logging**: all log message enums in `domain/logging/`.
 - **KISS**: no `__init__.py` unless re-export is genuinely needed; prefer flat, explicit imports.
 
+## 🛡️ Edge cases (mandatory handling)
+Every use case, adapter, and route MUST handle edge cases defensively, not just the happy path. During implementation, cover:
+- **Null / None / undefined inputs** — validate at the port boundary; raise the correct domain error, never let `None` propagate silently into business logic
+- **Empty / boundary values** — empty list, empty string, `0`, negative numbers, `datetime.min` / `datetime.max`, single-element collections; handle explicitly
+- **Off-by-one boundaries** — pagination first/last page, offset equals total count, zero results
+- **Invalid / malformed input** — Pydantic validation covers schema, but add domain-level validation for business rules (invalid state transition, value out of business range)
+- **Concurrency / race conditions** — duplicate creation, optimistic locking conflict, idempotency key replay; handle with proper error or upsert
+- **External adapter failure** — outbound adapter raises or times out; catch at the use case level, map to the correct domain error, never silently swallow
+- **State transitions** — already-exists, not-found, already-deleted, illegal transition; raise the correct centralized error from `domain/errors/`
+
+If the feature has domain invariants, enforce them in the entity constructor / validators and raise the matching `domain/errors/` exception when violated.
+
 ## Workflow
 
 1. **Pre-flight**: read the repo `AGENTS.md` for existing conventions and tooling.

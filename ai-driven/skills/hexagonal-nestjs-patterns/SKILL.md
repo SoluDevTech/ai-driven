@@ -19,6 +19,18 @@ Build a NestJS/TypeScript backend following hexagonal architecture, SOLID, and K
 - The task is Python/FastAPI → use `hexagonal-python-patterns`
 - The task is performance profiling → use `performance-audit`
 
+## 🛡️ Edge cases (mandatory handling)
+Every use case, controller, service, and adapter MUST handle edge cases defensively, not just the happy path. During implementation, cover:
+- **Null / undefined inputs** — validate at the port boundary via Zod; throw the correct domain exception, never let `null` / `undefined` propagate silently into business logic
+- **Empty / boundary values** — empty array, empty string, `0`, negative numbers, `new Date(0)`, single-element collections; handle explicitly
+- **Off-by-one boundaries** — pagination first/last page, offset equals total count, zero results
+- **Invalid / malformed input** — Zod schema validation covers structure, but add domain-level `.refine()` / `.superRefine()` for business rules (invalid state transition, value out of business range)
+- **Concurrency / race conditions** — duplicate creation, optimistic locking conflict, idempotency key replay; handle with proper exception or upsert
+- **External adapter failure** — outbound adapter throws or times out; catch at the use case level, map to the correct domain exception via the exception filter, never silently swallow
+- **State transitions** — already-exists, not-found, already-deleted, illegal transition; throw the correct mapped HTTP exception
+
+If the feature has domain invariants, enforce them in the Zod entity schema and throw the matching domain exception when violated.
+
 ## 🎯 Core workflow
 1. **Structure** — load `references/project-structure.md` and reproduce the layout.
 2. **Layer rules** — load `references/layer-rules.md` before writing code in a given layer.

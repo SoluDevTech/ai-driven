@@ -32,6 +32,18 @@ A fake/stub that diverges silently from the real implementation produces tests t
 5. **Write tests** — AAA pattern (Arrange, Act, Assert), explicit names, one logical assert per test.
 6. **Run** — `uv run pytest` (see `references/commands.md`).
 
+## 🛡️ Edge cases (mandatory coverage)
+Every test suite MUST cover edge cases, not just the happy path. For each use case / adapter / route under test, include tests for:
+- **Null / None / undefined inputs** — pass `None` where a value is expected, assert the correct error is raised
+- **Empty / boundary values** — empty list `[]`, empty string `""`, `0`, negative numbers, `datetime.min` / `datetime.max`, single-element collections
+- **Off-by-one boundaries** — first/last index, page 1, page size boundary, offset equals total count
+- **Invalid / malformed input** — wrong type, schema validation failure, out-of-range enum value, oversized payload
+- **Concurrency / race conditions** — duplicate concurrent requests, idempotency key replay (when applicable)
+- **External adapter failure** — outbound adapter raises, returns error, times out, returns empty — assert the use case handles it gracefully (no silent swallow)
+- **State transitions** — already-exists, not-found, already-deleted, duplicate creation
+
+If the feature under test has domain invariants or business rules, add at least one test per invariant that violates it and asserts the correct domain error.
+
 ## What you never do
 - Write an `InMemoryXxxRepository` or any other fake for an internal implementation
 - Mock a domain class, use case, or domain object
