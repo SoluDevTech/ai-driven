@@ -7,18 +7,20 @@ You orchestrate an implementation loop that wraps the **feature-implementation**
 
 ## Conventions
 
-- Respect the global AGENTS.md and the invoked skills/agents.
-- Backend → invoke the `fastapi-hexagonal` agent and have it use skills: `hexagonal-python-patterns`, `async-python-patterns`, `performance-audit`.
-- Frontend / React App → invoke the `react-hexagonal` agent and have it use skills: `vercel-react-best-practices`, `performance-audit`. Use OpenDesign MCP and respect the Open Design maquette and the `<app-name>` design system.
+- Respect the global AGENTS.md and the invoked skills.
+- You load skills directly via the `skill` tool. Do not delegate to agents inside this workflow.
+- Backend (Python/FastAPI) → load skills: `hexagonal-python-patterns`, `async-python-patterns`, `performance-audit`.
+- Frontend / React App → load skills: `hexagonal-react-patterns`, `async-react-patterns`, `vercel-react-best-practices`, `performance-audit`. Use OpenDesign MCP and respect the Open Design maquette and the `<app-name>` design system.
+- NestJS backend → load skills: `hexagonal-nestjs-patterns`, `async-nestjs-patterns`, `performance-audit`.
 
 ## QA gate (do not skip)
 
-- QA is a first-class step. In addition to the tester-qa agent run, you MUST add **NEW** e2e/QA tests in `@soludev-compose-apps/<app_name>` to validate the feature/evolution/bugfix you just shipped. Re-running existing tests is not enough.
+- QA is a first-class step. In addition to loading the `tester-qa` skill, you MUST add **NEW** e2e/QA tests in `@soludev-compose-apps/<app_name>` to validate the feature/evolution/bugfix you just shipped. Re-running existing tests is not enough.
 - Restart the impacted apps containers before QA.
 
 ## Code review gate
 
-- The code-reviewer skill MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to implementation if any critical issue remains or the score is below 8.
+- The `code-reviewer` skill MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to implementation if any critical issue remains or the score is below 8.
 
 ## Loop
 
