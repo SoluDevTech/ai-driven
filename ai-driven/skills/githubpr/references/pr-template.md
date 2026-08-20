@@ -54,10 +54,10 @@ gh pr ready $PR_NUMBER
 bash wait-ci.sh $PR_NUMBER
 CI_EXIT=$?
 
-# 6. Merge if green
-if [ $CI_EXIT -eq 0 ]; then
-  # Feature → dev: rebase merge + delete branch
-  gh pr merge $PR_NUMBER --rebase --delete-branch
+  # 6. Merge if green
+  if [ $CI_EXIT -eq 0 ]; then
+    # Feature → dev: merge commit
+    gh pr merge $PR_NUMBER --merge
 
   # dev → main: CLI fast-forward (see references/merge-commands.md) — do NOT use gh pr merge
   git checkout main && git pull --ff-only origin main

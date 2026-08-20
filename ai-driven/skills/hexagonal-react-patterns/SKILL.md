@@ -1,6 +1,6 @@
 ---
 name: hexagonal-react-patterns
-description: React/TypeScript frontend with hexagonal architecture, SOLID, and KISS. Project structure, layer rules (domain pure-TS, application/hooks, infrastructure/adapters), ports, CVA variants, Zod-in-domain, and full checklists. Use when implementing or refactoring a React app following hexagonal architecture.
+description: "React/TypeScript frontend patterns: hexagonal architecture, SOLID, KISS, domain pure-TS, application/hooks, infrastructure/adapters, ports, CVA variants, Zod-in-domain. Trigger on: React, Next.js, TypeScript frontend, package.json with react, *.tsx, vite.config.ts, or any request to implement/refactor/fix/scaffold a component, hook, page, or adapter. Use when working on ANY React/TypeScript frontend, not only explicitly hexagonal ones; defaults the structure to hexagonal."
 ---
 
 # React Hexagonal Architecture Patterns

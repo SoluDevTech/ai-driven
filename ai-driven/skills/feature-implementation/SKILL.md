@@ -1,116 +1,194 @@
 ---
 name: feature-implementation
-description: Skill-driven development workflow for implementation tasks. Use this skill when the user asks to implement a feature, fix a bug, or make significant code changes. Orchestrates work through phases, requirements gathering, test-first development (TDD), clean architecture implementation, code review, and documentation.
+description: Skill-driven development workflow for implementation tasks. Use this skill when the user asks to implement a feature, fix a bug, or make significant code changes. Aggressively loads the matching skill via the `skill` tool at EVERY step — TDD, clean architecture, code review, simplification, linting, security, QA, and documentation. Skills version (no agent delegation).
 ---
 
 You are a senior software engineer with expertise in clean architecture, TDD, and agile methodologies.
 
+## Trace & verification protocol (mandatory, non-negotiable)
+
+Read and apply `/Users/yohan/.config/opencode/skills/_shared/TRACE_PROTOCOL.md` in full. Summary:
+
+1. At the start of the loop, generate a `loop_id`:
+   ```bash
+   loop_id="feat-<slug>-$(date +%Y%m%d-%H%M%S)"
+   ```
+   Print it. Reuse it for every trace call.
+
+2. **After every `skill` call** (steps 1, 2, 4, 5, 6, 8, 9, 10, 11, 12): append a trace event:
+   ```bash
+   bash /Users/yohan/.config/opencode/skills/_shared/trace.sh \
+     "<repo-root>" "<loop_id>" "<step>" "skill" "<skill_name>" "loaded" "<detail>"
+   ```
+
+3. **Before moving from step N to step N+1**: verify the step N event was recorded:
+   ```bash
+   bash /Users/yohan/.config/opencode/skills/_shared/verify-step.sh \
+     "<repo-root>" "<loop_id>" "<step>" "skill" "<skill_name>"
+   ```
+   If exit code ≠ 0: STOP, print the trace, redo step N. Do NOT proceed.
+
+4. Every skill step MUST end its output with a single confirmation line:
+   `SKILL_CONFIRM: <skill_name> loaded and applied on step <N>`
+   The orchestrator greps this line from its own output before calling `verify-step.sh`. If missing, redo the step.
+
+5. Bash-only steps (3, 7) are traced as `type=bash` with `status=done` and `detail=<exit code / pass count>`.
+
+This dual gate (trace file + in-output confirmation) guarantees no step is silently skipped.
+
 ## CRITICAL RULES
 
-1. **You MUST follow EVERY step in order.** No step can be skipped, even if it seems trivial or unnecessary.
-2. **You MUST NOT create a PR until ALL prior steps are completed.** If you reach the PR step and realize you skipped a step, GO BACK and complete it.
-3. **Before creating a PR, you MUST verify the checklist below is 100% complete.** Print the checklist with checkmarks. If any step is unchecked, you cannot proceed.
-4. **If the user rejected a step** (e.g., tester-qa was rejected), mark it as "skipped by user" — do NOT silently skip it.
-5. **Complete one ticket fully before starting the next.** Never parallelize tickets.
-6. **You load skills directly via the `skill` tool.** Do not delegate to agents. Agents remain available for the user's manual use, but inside this workflow you invoke skills yourself.
+1. **You MUST load the required skill via the `skill` tool BEFORE executing each step.** Loading a skill is not optional — it is the first action of every step. If you skip the `skill` call, the step is invalid and you must redo it starting with the skill load.
+2. **You MUST follow EVERY step in order.** No step can be skipped, even if it seems trivial or unnecessary.
+3. **You MUST NOT create a PR until ALL prior steps are completed.** If you reach the PR step and realize you skipped a step, GO BACK and complete it.
+4. **Before creating a PR, you MUST verify the checklist below is 100% complete.** Print the checklist with checkmarks. If any step is unchecked, you cannot proceed.
+5. **If the user rejected a step** (e.g., QA was rejected), mark it as "skipped by user" — do NOT silently skip it.
+6. **Complete one ticket fully before starting the next.** Never parallelize tickets.
 
-## Stack Detection (run once at the start)
+## Stack detection (run BEFORE step 1)
 
-Before step 1, detect the target stack so you know which skills to load at each step:
+Detect the target stack from the repo files. This determines which hexagonal + async + test-writer skills to load at each step.
 
 - **Python / FastAPI** → look for `pyproject.toml`, `*.py`, `uv.lock`
 - **React / TypeScript** → look for `package.json` with `react`, `*.tsx`, `vite.config.ts`
 - **NestJS / TypeScript** → look for `@nestjs/core` in `package.json`, `*.controller.ts`, `app.module.ts`
 
-Record the detected stack. The skill mapping below depends on it.
+If ambiguous or mixed, ask the user which stack to target. Record the detected stack; you will use it to pick skills in every subsequent step.
 
-### Skill mapping per stack
+### Skill selection map per stack
 
-| Step | Python | React | NestJS |
-|------|--------|-------|--------|
-| TDD / tests | `test-writer-python` | `test-writer-react` | `test-writer-nestjs` |
-| Implementation | `hexagonal-python-patterns` + `async-python-patterns` | `hexagonal-react-patterns` + `async-react-patterns` + `vercel-react-best-practices` | `hexagonal-nestjs-patterns` + `async-nestjs-patterns` |
-| Performance | `performance-audit` | `performance-audit` | `performance-audit` |
-
-Common skills (any stack): `code-reviewer`, `code-simplifier`, `linter`, `sonarfix`, `trivyfix`, `tester-qa`, `documentation-writer`.
+| Step | Python / FastAPI | React / TypeScript | NestJS / TypeScript |
+|------|------------------|--------------------|---------------------|
+| 1 (TDD) | `test-writer-python` + `hexagonal-python-patterns` + `async-python-patterns` | `test-writer-react` + `hexagonal-react-patterns` + `async-react-patterns` | `test-writer-nestjs` + `hexagonal-nestjs-patterns` + `async-nestjs-patterns` |
+| 2 (Impl) | `hexagonal-python-patterns` + `async-python-patterns` + `performance-audit` | `hexagonal-react-patterns` + `async-react-patterns` + `vercel-react-best-practices` + `performance-audit` | `hexagonal-nestjs-patterns` + `async-nestjs-patterns` + `performance-audit` |
+| 4 (Review) | `code-reviewer` | `code-reviewer` | `code-reviewer` |
+| 5 (Simplify) | `code-simplifier` | `code-simplifier` | `code-simplifier` |
+| 6 (Lint) | `linter` | `linter` | `linter` |
+| 8 (Sonar) | `sonarfix` | `sonarfix` | `sonarfix` |
+| 9 (Trivy) | `trivyfix` | `trivyfix` | `trivyfix` |
+| 11 (Docs) | `documentation-writer` | `documentation-writer` | `documentation-writer` |
+| 12 (PR) | `githubpr` | `githubpr` | `githubpr` |
 
 ## Mandatory Checklist
 
 You MUST maintain this checklist throughout the implementation. Print it before creating the PR to verify completeness:
 
 ```
-- [ ] 1. TDD — Write failing tests first (load test-writer-<stack> skill)
-- [ ] 2. IMPLEMENTATION — Implement the feature (load hexagonal-<stack>-patterns + async-<stack>-patterns skills)
-- [ ] 3. TEST SUITE — Run full test suite, all green
-- [ ] 4. CODE REVIEW — Load code-reviewer skill, fix any critical issues
-- [ ] 5. CODE SIMPLIFIER — Load code-simplifier skill
-- [ ] 6. LINTER — Load linter skill (ruff for Python, eslint+prettier for TypeScript)
-- [ ] 7. RUN all unit tests
-- [ ] 8. SONARQUBE — Load sonarfix skill, run sonar-scanner, verify 0 new issues
-- [ ] 9. TRIVY — Load trivyfix skill, run trivy fs scan, verify 0 vulnerabilities
-- [ ] 10. TESTER-QA — Rebuild Docker, load tester-qa skill for manual verification
-- [ ] 11. DOCUMENTATION — Load documentation-writer skill, update or create documentation if needed
+- [ ] 1. TDD — load test-writer-<lang> + hexagonal-<lang> + async-<lang> skills, write failing tests (Red)
+- [ ] 2. IMPLEMENTATION — load hexagonal-<lang> + async-<lang> + performance-audit skills, implement (Green)
+- [ ] 3. TEST SUITE — run full test suite, all green
+- [ ] 4. CODE REVIEW — load code-reviewer skill, review, 0 critical + score ≥ 8/10
+- [ ] 5. CODE SIMPLIFIER — load code-simplifier skill, refactor
+- [ ] 6. LINTER — load linter skill, run ruff / eslint+prettier
+- [ ] 7. UNIT TESTS — run all unit tests
+- [ ] 8. SONARQUBE — load sonarfix skill, run sonar-scanner, 0 new issues
+- [ ] 9. TRIVY — load trivyfix skill, run trivy fs scan, 0 new vulns
+- [ ] 10. TESTER-QA — load test-writer-<lang> skill, rebuild Docker, manual QA + new e2e
+- [ ] 11. DOCUMENTATION — load documentation-writer skill, update docs
+- [ ] 12. PR — load githubpr skill, open one draft PR per modified repo
 ```
 
-**Before the PR step, verify ALL boxes 1-11 are checked.** If any is missing:
-
+**Before step 12 (PR), verify ALL boxes 1-11 are checked.** If any is missing:
 - STOP
 - Print the checklist showing which steps are incomplete
-- Complete the missing steps
+- Complete the missing steps (starting with the `skill` load)
 - Only then proceed to PR
 
 ## Development Workflow Details
 
 ### 1. Test-First Development
-- Load the `test-writer-<stack>` skill and write failing tests following TDD (Red-Green-Refactor cycle)
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `test-writer-<lang>` (and `hexagonal-<lang>`, `async-<lang>` per the skill map).
+2. write failing tests following TDD (Red-Green-Refactor cycle), using the loaded skill's templates and references.
+3. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 1`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "1" "skill" "test-writer-<lang>" "loaded" "<N> test files written"`.
+5. before step 2: `bash .../verify-step.sh ... "1" "skill" "test-writer-<lang>"` — if fail, redo step 1.
 
 ### 2. Implementation
-- Load the `hexagonal-<stack>-patterns` and `async-<stack>-patterns` skills (plus `vercel-react-best-practices` for React)
-- Implement using hexagonal/clean architecture patterns appropriate to the project
-- Load `performance-audit` skill when the change touches data access, queries, or render paths
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `hexagonal-<lang>` + `async-<lang>` + `performance-audit` (per the skill map).
+2. implement using hexagonal/clean architecture patterns from the loaded skill.
+3. print `SKILL_CONFIRM: hexagonal-<lang> loaded and applied on step 2`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "2" "skill" "hexagonal-<lang>" "loaded" "<N> files modified"`.
+5. before step 3: `verify-step.sh ... "2" "skill" "hexagonal-<lang>"` — if fail, redo step 2.
 
 ### 3. Full Test Suite
-- Run the FULL test suite (not just new tests): `uv run pytest tests/ -x -q` (Python), `npx vitest run` (TypeScript)
-- ALL tests must pass with 0 failures
+1. Run the FULL test suite: `uv run pytest tests/ -x -q` (Python), `npx vitest run` (TypeScript). All tests must pass with 0 failures. If a failure appears, loop back to step 2 (reload the impl skills first).
+2. `bash .../trace.sh "<repo-root>" "<loop_id>" "3" "bash" "test-suite" "done" "exit=<code>, pass=<N>"`.
+3. before step 4: `verify-step.sh ... "3" "bash" "test-suite"` — if fail, redo step 3.
 
 ### 4. Code Review
-- Load the `code-reviewer` skill — review the implementation for bugs, security issues, and best practices
-- The code-reviewer skill outputs an overall score on 10. The minimum required score is **8/10**
-- If the score is below 8, loop back to implementation and fix the issues, then re-run code-reviewer
-- If any critical issues remain, loop back to implementation regardless of the score
-- Commit fixes
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `code-reviewer`.
+2. review the implementation. The skill outputs an overall score on 10. Minimum required: **8/10**. If below 8, loop back to step 2 (reload impl skills) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
+3. print `SKILL_CONFIRM: code-reviewer loaded and applied on step 4`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "4" "skill" "code-reviewer" "loaded" "score=<S>, critical=<N>"`.
+5. before step 5: `verify-step.sh ... "4" "skill" "code-reviewer"` — if fail, redo step 4.
 
 ### 5. Code Simplifier
-- Load the `code-simplifier` skill — refactor to reduce complexity while maintaining functionality
-- Run tests again after simplification
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `code-simplifier`.
+2. refactor to reduce complexity while maintaining functionality. Run tests again after simplification (step 3).
+3. print `SKILL_CONFIRM: code-simplifier loaded and applied on step 5`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "5" "skill" "code-simplifier" "loaded" "<detail>"`.
+5. before step 6: `verify-step.sh ... "5" "skill" "code-simplifier"` — if fail, redo step 5.
 
 ### 6. Linter
-- Load the `linter` skill — run ruff (Python) and/or eslint+prettier (TypeScript)
-- Fix all linting issues before proceeding
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `linter`.
+2. run ruff (Python) and/or eslint+prettier (TypeScript) per the loaded skill. Fix all linting issues before proceeding.
+3. print `SKILL_CONFIRM: linter loaded and applied on step 6`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "6" "skill" "linter" "loaded" "<N> issues fixed"`.
+5. before step 7: `verify-step.sh ... "6" "skill" "linter"` — if fail, redo step 6.
 
 ### 7. Unit Tests
-- Run all unit tests again to ensure no regressions
+1. Run all unit tests again via Bash to ensure no regressions.
+2. `bash .../trace.sh "<repo-root>" "<loop_id>" "7" "bash" "unit-tests" "done" "exit=<code>, pass=<N>"`.
+3. before step 8: `verify-step.sh ... "7" "bash" "unit-tests"` — if fail, redo step 7.
 
 ### 8. SonarQube
-- Load the `sonarfix` skill — run SonarQube analysis
-- Verify 0 new issues on the branch
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `sonarfix`.
+2. run SonarQube analysis. Verify 0 new issues on the branch. If issues, loop back to step 2 (reload impl skills) to fix, then re-run.
+3. print `SKILL_CONFIRM: sonarfix loaded and applied on step 8`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "8" "skill" "sonarfix" "loaded" "<N> new issues"`.
+5. before step 9: `verify-step.sh ... "8" "skill" "sonarfix"` — if fail, redo step 8.
 
 ### 9. Trivy
-- Load the `trivyfix` skill — run Trivy vulnerability scan
-- Verify 0 new vulnerabilities
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `trivyfix`.
+2. run Trivy vulnerability scan. Verify 0 new vulnerabilities. If issues, loop back to step 2 to fix, then re-run.
+3. print `SKILL_CONFIRM: trivyfix loaded and applied on step 9`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "9" "skill" "trivyfix" "loaded" "<N> vulns"`.
+5. before step 10: `verify-step.sh ... "9" "skill" "trivyfix"` — if fail, redo step 9.
 
 ### 10. Tester-QA
-- Load the `tester-qa` skill — rebuild Docker images, restart stack, perform manual testing
-- Verify all acceptance criteria are met end-to-end
-- Try to find bugs that automated tests missed by trying edge cases and error scenarios
-- If bugs found: iterate back to step 5, fix, then re-run steps 6-11
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `test-writer-<lang>` (for e2e spec conventions).
+2. rebuild Docker images, restart stack, perform manual testing. Add NEW e2e/QA tests validating the shipped feature. Re-running existing tests is not enough. Verify all acceptance criteria are met end-to-end. Try edge cases automated tests missed. If bugs found: iterate back to step 2, fix, then re-run steps 3-10.
+3. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 10`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "10" "skill" "test-writer-<lang>" "loaded" "<N> e2e specs written"`.
+5. before step 11: `verify-step.sh ... "10" "skill" "test-writer-<lang>"` — if fail, redo step 10.
 
 ### 11. Documentation
-- Load the `documentation-writer` skill — update or create documentation when public APIs or significant behavior changes
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `documentation-writer`.
+2. update or create documentation when public APIs or significant behavior changes. Skip only if internal refactors with no user-facing impact (trace as `status=skipped-by-user`).
+3. print `SKILL_CONFIRM: documentation-writer loaded and applied on step 11`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "11" "skill" "documentation-writer" "loaded" "<detail>"`.
+5. before step 12: `verify-step.sh ... "11" "skill" "documentation-writer"` — if fail, redo step 11.
+
+### 12. PR
+**ACTIONS (in order):**
+1. call the `skill` tool NOW with `githubpr`.
+2. if no Jira ticket, create a conventional descriptive branch name. Open one detailed draft PR per modified repo. Commits are conventional. Do NOT merge — the user must be able to test on the local stack. Wait for CI green, then address reviewer feedback until 0 critical and score ≥ 8/10.
+3. print `SKILL_CONFIRM: githubpr loaded and applied on step 12`.
+4. `bash .../trace.sh "<repo-root>" "<loop_id>" "12" "skill" "githubpr" "loaded" "<PR URLs>"`.
+5. final: `verify-step.sh ... "12" "skill" "githubpr"` — if fail, redo step 12.
 
 ## Guidelines
+
 - Always complete the requirements phase before coding
-- If code review reveals issues, iterate back to implementation
-- Skip documentation-writer only if changes are internal refactors with no user-facing impact
-- If sonarfix or trivyfix find issues, iterate back to implementation to fix, then re-run the relevant check
+- If code review reveals issues, iterate back to implementation (reload impl skills first)
 - When chaining multiple tickets, be EXTRA vigilant about completing all steps — this is when steps get skipped
+- **Reloading a skill is cheap and idempotent.** When in doubt, load it again before the step. The `skill` tool is the canonical way to guarantee the workflow guidance is present in context.

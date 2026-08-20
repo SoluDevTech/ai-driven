@@ -8,6 +8,7 @@
 - **Stop when redirected.** When the user interrupts or redirects, stop immediately and follow their new direction. Do not continue the previous approach or ask unnecessary clarifying follow-up questions.
 - **Read before reasoning.** Before making ANY claim about how the codebase works, you MUST first Read the relevant source files or Grep for the pattern. Never answer from general knowledge when the answer is in the code.
 - **Confirm domain terminology.** When the user describes a bug or feature, confirm your understanding of domain-specific terms before implementing. Do not assume meanings.
+- **Never state verifiable facts from memory.** For any claim about a tool, library, framework, API, version, feature, or external behavior, fetch the primary source (official docs, repo, or spec) BEFORE answering. Memory is for reasoning and synthesis only — not for verifiable facts. If a claim is verifiable and you haven't fetched the source this session, check first. No exceptions for "I think I know this." If you can't access the source, say so explicitly. Do not patch confidence with caveats after being challenged — get it right the first time.
 - **You MUST follow feature-implementation workflow steps in order**. You must complete each step before moving to the next. If any issues arise in later steps, you may need to iterate back to previous steps to resolve them. Always ensure that requirements are fully clarified before coding, and that quality checks are passed before merging. **ALL STEPS ARE MANDATORY — load each skill directly via the `skill` tool: `test-writer-<stack>`, `hexagonal-<stack>-patterns`, `code-reviewer`, `code-simplifier`, `linter`, `sonarfix`, `trivyfix`, `tester-qa`, `documentation-writer`.** Do not delegate these steps to agents inside the workflow — agents remain available for the user's manual use only. Before creating a PR, you MUST print the full checklist and verify every step is checked. If a step was skipped, GO BACK and complete it before proceeding.
 
 ## Architecture & Code Style
@@ -37,5 +38,20 @@
 - The user works in French and English. Match the language of your responses to the language of the user's message. 
 
 ## Tools
+- **Activate the project in serena**
+- **Use Serana mcp to activate the project** and be able to use serena skills to understand and navigate inside the projects
+- **Use Serana mcp to navigate inside project** 
 - **Use Context7 and websearch to fetch updated documentation**
-- **Use the OpenDesign MCP for frontend development**
+
+## Stack detection & mandatory skill loading (before any code)
+
+Before writing or refactoring ANY code in a repo, detect the stack from the repo files and load the matching skill(s) via the `skill` tool BEFORE editing code. This applies to direct user requests, not only to the feature-implementation workflow.
+
+- **Python / FastAPI** (look for `pyproject.toml`, `*.py`, `uv.lock`) → load `hexagonal-python-patterns`. Additionally load `async-python-patterns` if the task touches async/concurrency. For tests, additionally load `test-writer-python`.
+- **React / TypeScript** (look for `package.json` with `react`, `*.tsx`, `vite.config.ts`) → load `hexagonal-react-patterns`. Additionally load `async-react-patterns` if async/streaming is involved, `vercel-react-best-practices` for Next.js or performance tasks. For tests, additionally load `test-writer-react`.
+- **NestJS / TypeScript** (look for `@nestjs/core` in `package.json`, `*.controller.ts`, `app.module.ts`) → load `hexagonal-nestjs-patterns`. Additionally load `async-nestjs-patterns` if async/queues/microservices/WebSocket are involved. For tests, additionally load `test-writer-nestjs`.
+
+Rules:
+- This rule covers code-writing tasks (implement, refactor, fix, scaffold, write tests). Pure read-only analysis ("explain this code") does NOT require loading a skill.
+- If the stack is ambiguous or mixed, ask the user which stack to target rather than guessing.
+- After loading the skill, follow its workflow and reference files; do not improvise layer structure.

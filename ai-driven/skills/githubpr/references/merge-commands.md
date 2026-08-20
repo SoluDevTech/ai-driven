@@ -4,10 +4,10 @@ The merge method depends on whether the target is a **feature branch** (deleted 
 
 ## A. Feature branch → `dev` (or `main` if no `dev` exists)
 
-Use the GitHub UI / `gh` CLI with **rebase and merge**. The feature branch is deleted after, so commit-hash rewriting is harmless.
+Use the GitHub UI / `gh` CLI with a **merge commit** (default for pickpro repos).
 
 ```bash
-gh pr merge <PR_NUMBER> --rebase --delete-branch
+gh pr merge <PR_NUMBER> --merge
 ```
 
 ## B. `dev` → `main` (long-lived branch → long-lived branch)

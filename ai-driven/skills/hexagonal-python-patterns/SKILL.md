@@ -1,6 +1,6 @@
 ---
 name: hexagonal-python-patterns
-description: "FastAPI backend with hexagonal architecture, SOLID principles, and KISS. Project structure, config, dependencies, routes, use cases, entities, errors, logging, and ports patterns."
+description: "FastAPI / Python backend patterns: hexagonal architecture, SOLID, KISS, ports (ABC inbound/outbound), Pydantic entities, use cases, centralized errors/logging. Trigger on: FastAPI, Python backend, pyproject.toml, uv.lock, or any request to implement/refactor/fix/scaffold a Python endpoint, use case, or adapter. Use when working on ANY FastAPI or Python backend, not only explicitly hexagonal ones; defaults the structure to hexagonal."
 ---
 
 # Instructions: FastAPI Backend with Hexagonal Architecture
@@ -64,21 +64,17 @@ If the feature has domain invariants, enforce them in the entity constructor / v
 ## Workflow
 
 1. **Pre-flight**: read the repo `AGENTS.md` for existing conventions and tooling.
-2. **Best practices**: load `references/best-practices.md` — Python + FastAPI conventions, data transformations, security, performance.
-3. **Scaffold structure** → `references/project-structure.md` — create the directory tree.
-4. **Bootstrap app** → `references/main-config-dependencies.md` — `main.py`, `config.py`, `dependencies.py`.
-5. **Wire routes/DTOs** → `references/routes-requests-responses.md` — `routes/`, `requests/`, `responses/`.
-6. **Implement use cases** → `references/use-cases.md` — application logic + inbound ports.
-7. **Define entities** → `references/entities.md` — `domain/entities/` Pydantic models.
-8. **Centralize errors** → `references/errors.md` — error codes, messages, custom exceptions.
-9. **Centralize logging** → `references/logging.md` — log message enums.
-10. **Define ports** → `references/ports.md` — `domain/ports/inbound/` + `domain/ports/outbound/` ABCs.
-11. **Anti-patterns** → `references/anti-patterns.md` — load before review to catch violations.
-12. **Checklist** → `references/checklist.md` — run end-to-end before declaring done.
+2. **Scaffold structure** → `references/project-structure.md` — create the directory tree.
+3. **Bootstrap app** → `references/main-config-dependencies.md` — `main.py`, `config.py`, `dependencies.py`.
+4. **Wire routes/DTOs** → `references/routes-requests-responses.md` — `routes/`, `requests/`, `responses/`.
+5. **Implement use cases** → `references/use-cases.md` — application logic + inbound ports.
+6. **Define entities** → `references/entities.md` — `domain/entities/` Pydantic models.
+7. **Centralize errors** → `references/errors.md` — error codes, messages, custom exceptions.
+8. **Centralize logging** → `references/logging.md` — log message enums.
+9. **Define ports** → `references/ports.md` — `domain/ports/inbound/` + `domain/ports/outbound/` ABCs.
 
 ## References
 
-- `references/best-practices.md` — Python + FastAPI best practices, security, performance, data transformations.
 - `references/project-structure.md` — Directory tree and folder responsibilities.
 - `references/main-config-dependencies.md` — `main.py`, `config.py`, `dependencies.py` templates (lifespan, settings, DI).
 - `references/routes-requests-responses.md` — `routes/`, `requests/`, `responses/` templates (routers + DTOs).
@@ -87,5 +83,3 @@ If the feature has domain invariants, enforce them in the entity constructor / v
 - `references/errors.md` — Error codes, `ErrorMessage` enum, custom exceptions.
 - `references/logging.md` — Log message `StrEnum` templates.
 - `references/ports.md` — `domain/ports/` ABC interfaces (inbound/outbound).
-- `references/anti-patterns.md` — "Absolutely Avoid" list + critical reminders.
-- `references/checklist.md` — architecture, SOLID, Python, code quality, DevOps checklists.

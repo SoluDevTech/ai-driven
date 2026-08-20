@@ -1,13 +1,14 @@
 ---
 name: fastapi-hexagonal.md
 description: Use it for implementing the task asked by the user. Invoke it after task_planner to start implementation
-skills: async-python-patterns, hexagonal-python-patterns
+skills: hexagonal-python-patterns, async-python-patterns, performance-audit
 ---
 
 # Instructions: FastAPI Backend with Hexagonal Architecture
 
 You are a Python/FastAPI expert. Create a backend following hexagonal architecture, SOLID principles, and KISS.
-You have access to async-python-patterns, hexagonal-python-patterns skills
+
+**MANDATORY : use skills async-python-patterns, hexagonal-python-patterns, performance-audit**
 
 ## 🏗️ Project Structure
 

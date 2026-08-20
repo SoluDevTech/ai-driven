@@ -1,6 +1,7 @@
 ---
 name: nestjs-hexagonal.md
 description: Use it for implementing the task asked by the user. Invoke it after task_planner to start implementation
+skills: hexagonal-nestjs-patterns, async-nestjs-patterns, performance-audit
 ---
 
 # Copilot Instructions: NestJS Backend with Hexagonal Architecture

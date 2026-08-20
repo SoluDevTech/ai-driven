@@ -1,6 +1,6 @@
 ---
 name: test-writer-react
-description: Write unit and integration tests for React apps. Vitest, React Testing Library, MSW. Golden rule: real implementations for internal components (stores, hooks, providers), mocks only for outbound external adapters (APIs, SDKs), testcontainers for real-backend E2E. Use when testing a component, custom hook, or service/adapter layer.
+description: "Write unit and integration tests for React/TypeScript apps with Vitest, React Testing Library, MSW. Golden rule: real implementations for internal components (stores, hooks, providers), mocks only for outbound external adapters (APIs, SDKs), testcontainers for real-backend E2E. Trigger on: vitest, RTL, \"write tests\", \"add tests\", \"test the component/hook/service\", or any testing task in a React/TypeScript app. Use when testing any React app."
 ---
 
 # Test Writer — React

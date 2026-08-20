@@ -1,6 +1,6 @@
 ---
 name: async-react-patterns
-description: React/TypeScript asynchronous patterns: Suspense, the use() hook, server components, streaming SSR, TanStack Query data fetching, concurrent features (useTransition, useDeferredValue), async error boundaries, and testing async components. Use when implementing async data flow, loading states, streaming, or background data work in a React app.
+description: "React/TypeScript asynchronous patterns: Suspense, the use() hook, server components, streaming SSR, TanStack Query data fetching, concurrent features (useTransition, useDeferredValue), async error boundaries, and testing async components. Trigger on: Suspense, useTransition, useDeferredValue, TanStack Query, server components, streaming SSR, async error boundaries, \"async data\", \"loading state\", \"streaming\", or any async/concurrency task in a React app. Use whenever the task touches async data flow or concurrency in React."
 ---
 
 # Async React Patterns

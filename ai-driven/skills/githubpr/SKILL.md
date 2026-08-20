@@ -59,7 +59,7 @@ Possible states:
 ## 5. Merge
 
 Two distinct scenarios — **load `references/merge-commands.md` before merging**:
-- **A. Feature → `dev`** (or `main` if no `dev`): `gh pr merge --rebase --delete-branch`
+- **A. Feature → `dev`** (or `main` if no `dev`): `gh pr merge --merge`
 - **B. `dev` → `main`**: **NEVER use `gh pr merge`**. Use CLI `git merge --ff-only dev` + `git push origin main` (true fast-forward, no hash rewriting).
 
 ## 6. Full agent flow
@@ -69,9 +69,8 @@ Two distinct scenarios — **load `references/merge-commands.md` before merging*
 ## Agent rules
 
 - **Never merge** if `wait-ci.sh` exit code != 0
-- **Feature → `dev`**: use `gh pr merge --rebase --delete-branch`
+- **Feature → `dev`**: use `gh pr merge --merge`
 - **`dev` → `main`**: **never use `gh pr merge`**. Use CLI `git merge --ff-only dev` + `git push origin main` (see `references/merge-commands.md`)
-- **Never `--delete-branch` on `dev` or `main`** — they are long-lived
 - **Never force-push `dev` or `main`**
 - On CI failure: log the ticket and **continue** to the next one — do not block the pipeline
 - PR title must always start with the ticket ID: `PROJ-123: ...`
@@ -79,4 +78,4 @@ Two distinct scenarios — **load `references/merge-commands.md` before merging*
 ## References
 - `references/pr-template.md` — `gh pr create` command, PR body template, full agent flow script
 - `references/ci-polling-script.md` — `wait-ci.sh` polling script with exit codes
-- `references/merge-commands.md` — merge commands for both scenarios (feature→dev rebase, dev→main fast-forward)
+- `references/merge-commands.md` — merge commands for both scenarios (feature→dev merge commit, dev→main fast-forward)

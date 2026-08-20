@@ -1,6 +1,6 @@
 ---
 name: async-python-patterns
-description: "Comprehensive guidance for implementing asynchronous Python applications using asyncio, concurrent programming patterns, and async/await for building high-performance, non-blocking systems."
+description: "Comprehensive guidance for implementing asynchronous Python applications using asyncio, concurrent programming patterns, and async/await for building high-performance, non-blocking systems. Trigger on: asyncio, async/await, FastAPI background tasks, \"async flow\", \"concurrency\", \"non-blocking\", event loop, \"race condition\", gather/TaskGroup, or any async/concurrency task in a Python backend. Use whenever the task touches async or concurrency in Python."
 ---
 
 # Async Python Patterns
