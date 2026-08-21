@@ -55,6 +55,18 @@ Detect the target stack from the repo files. This determines which hexagonal + a
 
 If ambiguous or mixed, ask the user which stack to target. Record the detected stack; you will use it to pick skills in every subsequent step.
 
+## Spec file handling (mandatory, before step 1)
+
+The product-owner agent persists its Requirements Document to `.opencode/specs/<slug>.md` and prints a `SPEC_FILE: <path>` pointer line. You MUST consume this spec and use it as the requirements context for every step.
+
+1. **Detect the spec source** — check if `$ARGUMENTS` (or the user's input) contains a file path matching `.opencode/specs/*.md`. Also look for a `SPEC_FILE: <path>` line in the conversation history.
+2. **Read the spec file** — if found, call the `read` tool to load the FULL file content. Store it as the spec context. Do NOT summarize it.
+3. **State the spec mode** before starting step 1:
+   - `SPEC_MODE: file — <path>` (spec file found and read)
+   - `SPEC_MODE: conversation-fallback` (no spec file, using conversation history)
+4. **Use the full spec at every step** — the spec content guides TDD (test cases based on acceptance criteria + edge cases), implementation (functional requirements + technical notes), and QA (validate all acceptance criteria end-to-end). Refer back to the full spec content at each step rather than relying on memory.
+5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found, fall back to whatever requirements context is available in the conversation history. State explicitly that you are in fallback mode.
+
 ### Skill selection map per stack
 
 | Step | Python / FastAPI | React / TypeScript | NestJS / TypeScript |

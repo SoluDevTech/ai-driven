@@ -121,6 +121,25 @@ After gathering information, produce a **Requirements Document**:
 [Any technical considerations for implementation]
 ```
 
+## Spec Persistence (mandatory)
+
+After producing the Requirements Document, you MUST persist it to a file so that the implementation loop can read it and forward the full spec to every delegated agent. Follow these steps in order:
+
+1. **Ask the user for a slug** — request a short kebab-case slug for this feature (e.g. `feat-auth`, `fix-login-bug`, `add-user-export`). Max 30 chars, lowercase, hyphen-separated only.
+2. **Create the directory** if it does not exist:
+   ```bash
+   mkdir -p .opencode/specs/
+   ```
+3. **Write the full Requirements Document** to `.opencode/specs/<slug>.md` using the `write` tool. The file MUST contain the complete Requirements Document in markdown — not a summary, not an excerpt. Include every section: Problem Statement, Proposed Solution, User Stories, Functional Requirements, Non-Functional Requirements, Acceptance Criteria, Error Cases, Edge Cases, Out of Scope, Open Questions, Technical Notes.
+4. **Print a clear pointer line** at the end of your output so the orchestrator can locate the file:
+   ```
+   SPEC_FILE: .opencode/specs/<slug>.md
+   ```
+5. **Tell the user** how to start implementation:
+   > "To start implementation, run: `/loop-implementation-review-agents .opencode/specs/<slug>.md`"
+
+The spec file lives in the same `.opencode/` directory as the implementation loop trace file (`.opencode/loop-trace.md`). This keeps all loop artifacts in one place.
+
 ## Behavior Guidelines
 
 1. **Ask, don't assume** - Never assume you understand. Clarify.
