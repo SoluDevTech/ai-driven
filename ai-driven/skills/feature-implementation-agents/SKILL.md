@@ -153,7 +153,7 @@ Fallback: if no spec file path is provided and no `SPEC_FILE` line is found, fal
 | 11 (Docs) | `documentation-writer` skill (run yourself) | `documentation-writer` skill (run yourself) | `documentation-writer` skill (run yourself) |
 | 12 (PR) | `githubpr` skill (run yourself) | `githubpr` skill (run yourself) | `githubpr` skill (run yourself) |
 
-**Note:** Steps that are pure skills (code-simplifier, linter, sonarfix, trivyfix, documentation-writer, githubpr) are loaded via the `skill` tool directly by you (the orchestrator) — they are not agents and cannot be delegated via `task`. Steps that are roles (TDD, implementation, code review, QA) ARE delegated to agents. The `code-reviewer-<lang>` agents auto-load the `code-reviewer` skill + `hexagonal-<lang>-patterns` + `async-<lang>-patterns` + `performance-audit` + `test-writer-<lang>` skills via their frontmatter — they run on `ollama-cloud/kimi-k2.7-code`. The `product-owner` agent is NOT part of the loop — the user provides the spec/requirements directly as input to the loop.
+**Note:** Steps that are pure skills (code-simplifier, linter, sonarfix, trivyfix, documentation-writer, githubpr) are loaded via the `skill` tool directly by you (the orchestrator) — they are not agents and cannot be delegated via `task`. Steps that are roles (TDD, implementation, code review, QA) ARE delegated to agents. The `code-reviewer-<lang>` and `tester-qa` agents run on `ollama-cloud/kimi-k2.7-code` (vision-capable — can read screenshots and UI state). The `product-owner` agent is NOT part of the loop — the user provides the spec/requirements directly as input to the loop.
 
 ## How to delegate to an agent
 

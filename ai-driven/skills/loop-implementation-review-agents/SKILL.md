@@ -25,7 +25,7 @@ The wrapped feature-implementation-agents skill writes a trace event to `<LOOP_D
 ## Conventions
 
 - Respect the global AGENTS.md.
-- Role steps (requirements, TDD, implementation, code review, QA) are delegated to agents via the `task` tool. Agents auto-load their declared skills through the `skills:` frontmatter — you remind them in every task prompt. The `code-reviewer-<lang>` agents run on `ollama-cloud/kimi-k2.7-code`.
+- Role steps (requirements, TDD, implementation, code review, QA) are delegated to agents via the `task` tool. Agents auto-load their declared skills through the `skills:` frontmatter — you remind them in every task prompt. The `code-reviewer-<lang>` and `tester-qa` agents run on `ollama-cloud/kimi-k2.7-code`.
 - Pure-skill steps (simplification, linting, sonar, trivy, documentation, PR) are loaded via the `skill` tool directly by you (the orchestrator) — they are not agents.
 - Backend (Python/FastAPI) → `fastapi-hexagonal` agent (skills: `hexagonal-python-patterns`, `async-python-patterns`, `performance-audit`).
 - Backend (NestJS) → `nestjs-hexagonal` agent (skills: `hexagonal-nestjs-patterns`, `async-nestjs-patterns`, `performance-audit`).
@@ -83,7 +83,7 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 | 7 (Unit tests) | bash | run all unit tests |
 | 8 (Sonar) | skill | `skill` → `sonarfix` |
 | 9 (Trivy) | skill | `skill` → `trivyfix` |
-| 10 (QA) | agent | `task` → `tester-qa` (auto-loads QA conventions) |
+| 10 (QA) | agent | `task` → `tester-qa` (auto-loads QA conventions; runs on kimi-k2.7-code) |
 | 11 (Docs) | skill | `skill` → `documentation-writer` |
 | 12 (PR) | skill | `skill` → `githubpr` |
 
