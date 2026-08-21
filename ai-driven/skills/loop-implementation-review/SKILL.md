@@ -46,6 +46,7 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 ## QA gate (do not skip)
 
 - QA is a first-class step. In addition to the manual QA run, you MUST add **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e` to validate the feature/evolution/bugfix you just shipped. Re-running existing tests is not enough.
+- Confirmed bugs MUST be persisted to `.opencode/bug-reports/<slug>.md` (co-located with the spec at `.opencode/specs/<slug>.md` and the loop trace at `.opencode/loop-trace.md`). The wrapped feature-implementation skill prints a `BUG_REPORT: <path|none>` pointer line at the end of step 10. `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to step 2 (reload the impl skills first), re-reading the bug report file IN FULL before fixing, then re-running steps 3-10. Loop until `BUG_REPORT: none`.
 - **NEVER skip e2e claiming the workspace does not exist.** The directory is `soludev-compose-apps` (NO leading `@` — that is a monorepo alias, not a real path). Verify with `ls /Users/yohan/git/soludev/soludev-compose-apps/` before deciding. If the app subfolder exists (e.g. `soludev-compose-apps/ubby/e2e/`), you MUST write and run e2e there. Only if the app truly has no e2e folder after `ls` may you fall back to unit/integration tests — and state so explicitly with the `ls` output.
 - Restart the impacted apps containers before QA.
 

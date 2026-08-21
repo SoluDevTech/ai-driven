@@ -126,7 +126,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 - [ ] 7. UNIT TESTS — all unit tests green
 - [ ] 8. SONARQUBE — sonarfix skill → 0 new issues
 - [ ] 9. TRIVY — trivyfix skill → 0 new vulns
-- [ ] 10. TESTER-QA — tester-qa agent + new e2e in soludev-compose-apps/<app>/e2e
+- [ ] 10. TESTER-QA — tester-qa agent + new e2e in soludev-compose-apps/<app>/e2e + `BUG_REPORT: <path|none>` pointer returned
 - [ ] 11. DOCUMENTATION — documentation-writer skill → docs updated
 - [ ] 12. PR — githubpr skill → one draft PR per modified repo
 ```
@@ -230,10 +230,30 @@ You MUST maintain this checklist throughout the implementation. Print it before 
      ```
      If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
    - Forward the list of implemented files from step 2.
-   - Instruct the agent to end its returned message with `AGENT_CONFIRM: tester-qa delegated on step 10 → <N> e2e specs written, <N> bugs found`.
+   - Include the bug-report persistence block (mandatory — the agent MUST persist bugs to a file, not just print them):
+     ```
+     BUG REPORT OUTPUT (mandatory):
+     - If you find confirmed bugs, persist the FULL bug report to `.opencode/bug-reports/<slug>.md` (reuse the <slug> from the SPEC_FILE path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p .opencode/bug-reports/` first, then `write` the complete tickets to that file — not a summary.
+     - Print one line per confirmed bug right before the pointer line: `BUG-XXX | Severity | Layer | <one-line root cause>`.
+     - End your returned message with EXACTLY one pointer line: `BUG_REPORT: .opencode/bug-reports/<slug>.md` (bugs found) or `BUG_REPORT: none` (no bugs).
+     - This mirrors the SPEC_FILE pointer convention so the orchestrator can forward the path to the implementation agent on a loop-back.
+     ```
+   - Instruct the agent to end its returned message with `AGENT_CONFIRM: tester-qa delegated on step 10 → <N> e2e specs written, <N> bugs found, BUG_REPORT: <path|none>`.
 2. the agent restarts impacted app containers, explores the app via curl + Chrome DevTools MCP, and writes NEW e2e Playwright specs in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough. If bugs found, loop back to step 2 with the bug report and re-run steps 3-10.
-3. `bash .../trace.sh "<repo-root>" "<loop_id>" "10" "agent" "tester-qa" "delegated" "<N> e2e specs, <N> bugs"`.
+3. `bash .../trace.sh "<repo-root>" "<loop_id>" "10" "agent" "tester-qa" "delegated" "<N> e2e specs, <N> bugs, BUG_REPORT: <path|none>"`.
 4. before step 11: `verify-step.sh ... "10" "agent" "tester-qa"` — if fail, redo step 10.
+
+#### Bug report consumption (orchestrator side, after step 10)
+
+Grep the `BUG_REPORT: <path|none>` line from the tester-qa agent's returned message:
+
+- `BUG_REPORT: none` → QA gate passed, proceed to step 11.
+- `BUG_REPORT: .opencode/bug-reports/<slug>.md` → QA gate failed. Loop back to step 2 (implementation agent). When you delegate to the implementation agent, include a **bug-report pointer block** in the task prompt (non-negotiable, path-only — never paste the content):
+  ```
+  BUG_REPORT: <path>
+  Use the `read` tool to read this bug report IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Fix every confirmed bug listed in the report, ordered by descending severity (Critical first). Each ticket has Steps to reproduce, Expected behavior, Observed behavior, Evidence, and a Root cause hypothesis — use them to locate and fix the defect.
+  ```
+  Re-include the `SPEC_FILE: <path>` block alongside it (agents do not retain context across sessions). Then re-run steps 3-10. Loop until the tester-qa agent returns `BUG_REPORT: none`.
 
 ### 11. Documentation
 **ACTIONS (in order):**
@@ -256,5 +276,6 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 - The user provides the spec/requirements as input to the loop — no discovery phase inside the loop. Prefer a spec file path (`.opencode/specs/<slug>.md`) produced by the product-owner agent. Fall back to conversation context only if no spec file is available.
 - **NEVER summarize a spec file. If a spec file exists, pass its PATH to the agent and instruct it to `read` the file in full. The agent reads the spec itself — you do NOT paste the content into the task prompt. A summarized or pasted-but-truncated spec is an invalid delegation.** If no spec file exists (fallback mode), include the available conversation context in the task prompt — a summary is acceptable ONLY in fallback mode.
 - If code review reveals issues, iterate back to implementation (delegate to the implementation agent with `task_id` to resume the session, and re-include the `SPEC_FILE: <path>` pointer in the task prompt).
+- If QA reveals bugs, iterate back to implementation with BOTH the `SPEC_FILE: <path>` AND the `BUG_REPORT: <path>` pointer blocks in the task prompt (path-only — agents read the files themselves). Loop until the tester-qa agent returns `BUG_REPORT: none`.
 - When chaining multiple tickets, be EXTRA vigilant about completing all steps — this is when steps get skipped.
 - **Delegating is cheap.** When in doubt, delegate again to the matching agent with the path pointer + previous step artifacts. The `task` tool is the canonical way to guarantee the agent's skills are loaded and the work is done by the right role.

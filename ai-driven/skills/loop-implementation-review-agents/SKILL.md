@@ -38,6 +38,20 @@ The product-owner agent persists its Requirements Document to `.opencode/specs/<
 4. **Path forwarding is non-negotiable** — the wrapped feature-implementation-agents skill MUST include `SPEC_FILE: <path>` plus a `read` instruction in every `task` delegation prompt (steps 1, 2, 10). Agents do NOT see the conversation. The agent reads the spec file itself — never paste the content, never summarize it. A summarized or pasted-but-truncated spec is an invalid delegation — redo it with the path-only instruction.
 5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found, fall back to conversation context in the task prompt. State explicitly that you are in fallback mode. A summary is acceptable ONLY in fallback mode.
 
+## Bug report forwarding (mandatory)
+
+The `tester-qa` agent persists confirmed bugs to `.opencode/bug-reports/<slug>.md` (same `.opencode/` directory as the spec and the loop trace) and ends its returned message with a `BUG_REPORT: <path|none>` pointer line — mirroring the `SPEC_FILE: <path>` convention. You MUST consume this pointer and forward the **path** (never the content) to the implementation agent on every QA-failed loop-back.
+
+1. **Grep the pointer** from the tester-qa agent's returned message: `BUG_REPORT: <path|none>`.
+2. **`BUG_REPORT: none`** → QA gate passed. Proceed to the next step (documentation).
+3. **`BUG_REPORT: .opencode/bug-reports/<slug>.md`** → QA gate failed. When you re-delegate to the implementation agent (step 2) via `task` with `task_id` to resume the session, you MUST include a bug-report pointer block in the task prompt alongside the `SPEC_FILE: <path>` block:
+   ```
+   BUG_REPORT: <path>
+   Use the `read` tool to read this bug report IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Fix every confirmed bug listed in the report, ordered by descending severity (Critical first). Each ticket has Steps to reproduce, Expected behavior, Observed behavior, Evidence, and a Root cause hypothesis — use them to locate and fix the defect.
+   ```
+4. **Path-only is non-negotiable** — agents do NOT see the conversation. The agent reads the bug report file itself — never paste the content, never summarize it. A summarized or pasted-but-truncated bug report is an invalid delegation — redo it with the path-only instruction.
+5. **Loop until green** — re-run steps 3-10 after each fix round. Only when the tester-qa agent returns `BUG_REPORT: none` is the QA gate considered passed.
+
 ## Skill + agent loading is mandatory at every step
 
 The wrapped feature-implementation-agents skill is aggressive about loading/delegating at every step. You MUST NOT skip the `task` call (role steps) or the `skill` call (tooling steps). The map is:
@@ -60,7 +74,8 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 ## QA gate (do not skip)
 
 - QA is a first-class step (step 10). The `tester-qa` agent MUST add **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough.
-- **NEVER skip e2e claiming the workspace does not exist.** Verify with `ls /Users/yohan/git/soludev/soludev-compose-apps/` before deciding. If the app subfolder exists (e.g. `soludev-compose-apps/ubby/e2e/`), the agent MUST write and run e2e there. Only if the app truly has no e2e folder after `ls` may it fall back to unit/integration tests — and state so explicitly with the `ls` output.
+- The `tester-qa` agent MUST persist confirmed bugs to `.opencode/bug-reports/<slug>.md` and end its returned message with a `BUG_REPORT: <path|none>` pointer. `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to the implementation agent (see "Bug report forwarding" above).
+- **NEVER skip e2e claiming the workspace does not exist.** Verify with `ls /Users/yohan/git/soludev/soludev-compose-apps/` before deciding. If the app subfolder exists (e.g. `soludev-compose-apps/ubby/e2e/`), the agent MUST write and run e2e there. Only if the app truly has no e2e folder after `ls` may it fall back to unit/integration tests — and state so with the `ls` output.
 - Restart the impacted apps containers before QA — the `tester-qa` agent does this.
 
 ## Code review gate

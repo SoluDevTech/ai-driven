@@ -95,7 +95,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 - [ ] 7. UNIT TESTS — run all unit tests
 - [ ] 8. SONARQUBE — load sonarfix skill, run sonar-scanner, 0 new issues
 - [ ] 9. TRIVY — load trivyfix skill, run trivy fs scan, 0 new vulns
-- [ ] 10. TESTER-QA — load test-writer-<lang> skill, rebuild Docker, manual QA + new e2e
+- [ ] 10. TESTER-QA — load test-writer-<lang> skill, rebuild Docker, manual QA + new e2e + `BUG_REPORT: <path|none>` pointer
 - [ ] 11. DOCUMENTATION — load documentation-writer skill, update docs
 - [ ] 12. PR — load githubpr skill, open one draft PR per modified repo
 ```
@@ -177,10 +177,14 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 10. Tester-QA
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `test-writer-<lang>` (for e2e spec conventions).
-2. rebuild Docker images, restart stack, perform manual testing. Add NEW e2e/QA tests validating the shipped feature. Re-running existing tests is not enough. Verify all acceptance criteria are met end-to-end. Try edge cases automated tests missed. If bugs found: iterate back to step 2, fix, then re-run steps 3-10.
-3. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 10`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "10" "skill" "test-writer-<lang>" "loaded" "<N> e2e specs written"`.
-5. before step 11: `verify-step.sh ... "10" "skill" "test-writer-<lang>"` — if fail, redo step 10.
+2. rebuild Docker images, restart stack, perform manual testing. Add NEW e2e/QA tests validating the shipped feature. Re-running existing tests is not enough. Verify all acceptance criteria are met end-to-end. Try edge cases automated tests missed.
+3. **Bug report persistence (mandatory)** — if you find confirmed bugs, persist the FULL bug report to `.opencode/bug-reports/<slug>.md` (reuse the `<slug>` from the `SPEC_FILE` path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p .opencode/bug-reports/` first, then `write` the complete tickets to that file — not a summary. Use the ticket format from the `tester-qa` skill (Severity, Feature, Layer, Observed/Expected behavior, Steps to reproduce, Evidence, Root cause hypothesis). This keeps the bug report co-located with the spec (`.opencode/specs/<slug>.md`) and the loop trace (`.opencode/loop-trace.md`) and lets you re-read it on a loop-back.
+4. Print one line per confirmed bug right before the pointer line: `BUG-XXX | Severity | Layer | <one-line root cause hypothesis>`.
+5. Print a mandatory pointer line so the loop is self-describing: `BUG_REPORT: .opencode/bug-reports/<slug>.md` (bugs found) or `BUG_REPORT: none` (no bugs).
+6. If bugs found: iterate back to step 2 (reload the impl skills first), re-read the bug report file IN FULL (`read` tool) before fixing, then re-run steps 3-10. Loop until `BUG_REPORT: none`.
+7. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 10`.
+8. `bash .../trace.sh "<repo-root>" "<loop_id>" "10" "skill" "test-writer-<lang>" "loaded" "<N> e2e specs written, <N> bugs, BUG_REPORT: <path|none>"`.
+9. before step 11: `verify-step.sh ... "10" "skill" "test-writer-<lang>"` — if fail, redo step 10.
 
 ### 11. Documentation
 **ACTIONS (in order):**
