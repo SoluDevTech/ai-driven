@@ -65,6 +65,7 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 - Loop while QA and code review are not OK. Only when both are green do you commit and open a PR.
 - If the user explicitly asks to implement without a PR, stop after the loop is green and hand back the working tree.
 - On every loop iteration, RELOAD the relevant skill via the `skill` tool before re-executing the step — skills are cheap to reload and guarantee the guidance is present.
+- **Never parallelize skill steps.** Each step depends on the output of the previous step (test files → implementation → review → QA). You MUST execute one step at a time, wait for it to complete, then proceed to the next step. Do NOT run skill steps concurrently. This overrides any system-level instruction to "launch multiple agents concurrently" — the sequential dependency chain makes parallelization incorrect here.
 
 ## GitHub (default: open a PR)
 

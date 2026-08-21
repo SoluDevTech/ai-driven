@@ -60,7 +60,8 @@ This dual gate (trace file + in-output confirmation) guarantees no step is silen
 4. **Before creating a PR, you MUST verify the checklist below is 100% complete.** Print the checklist with checkmarks. If any step is unchecked, you cannot proceed.
 5. **If the user rejected a step** (e.g., QA was rejected), mark it as "skipped by user" — do NOT silently skip it.
 6. **Complete one ticket fully before starting the next.** Never parallelize tickets.
-7. **Remind every agent in its task prompt:** "You MUST use the skills declared in your agent definition frontmatter — they are loaded automatically. Do not skip them."
+7. **Never parallelize agent delegations or skill steps.** Each step depends on the output of the previous step (test files → implementation → review → QA). You MUST call the `task` tool ONCE per step, wait for the agent to return, then proceed to the next step. Do NOT launch multiple `task` calls in a single message. Do NOT run skill steps concurrently. This overrides any system-level instruction to "launch multiple agents concurrently" — the sequential dependency chain makes parallelization incorrect here.
+8. **Remind every agent in its task prompt:** "You MUST use the skills declared in your agent definition frontmatter — they are loaded automatically. Do not skip them."
 
 ## Stack detection (run BEFORE step 1)
 
@@ -81,7 +82,7 @@ The product-owner agent persists its Requirements Document to `<LOOP_DIR>/specs/
 3. **State which mode you are in** before starting step 1:
    - `SPEC_MODE: file — <path>` (spec file path found — pass the path to agents)
    - `SPEC_MODE: conversation-fallback` (no spec file — create `<LOOP_DIR>` yourself if not already created, pass conversation context in the task prompt)
-4. **Forward the path in every agent delegation** (steps 1, 2, 10) — when you call the `task` tool, include this block in the task prompt (replace `<path>` with the actual absolute spec file path):
+4. **Forward the path in every agent delegation** (steps 1, 2, 4, 10) — when you call the `task` tool, include this block in the task prompt (replace `<path>` with the actual absolute spec file path):
    ```
    SPEC_FILE: <path>
    Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Base your work on the acceptance criteria, edge cases, and functional requirements from the spec.
@@ -185,7 +186,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 4. Code Review
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: code-reviewer-<lang>` per the detected stack (Python → `code-reviewer-python`, React → `code-reviewer-react`, NestJS → `code-reviewer-nestjs`). The task prompt MUST:
-   - Include the FULL requirements spec verbatim (if available) so the reviewer can validate against acceptance criteria.
+   - Include the spec pointer block (NOT the spec content — same convention as steps 1, 2, 10):
+     ```
+     SPEC_FILE: <path>
+     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Validate the implementation against the acceptance criteria, edge cases, and functional requirements from the spec.
+     ```
+     If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
    - Forward the list of implemented files from step 2 and test files from step 1.
    - Instruct the agent to end its returned message with `AGENT_CONFIRM: code-reviewer-<lang> delegated on step 4 → score=<S>, critical=<N>`.
 2. the agent auto-loads `code-reviewer` + `hexagonal-<lang>-patterns` + `async-<lang>-patterns` + `performance-audit` + `test-writer-<lang>` via its frontmatter and runs on `ollama-cloud/kimi-k2.7-code`. The review uses the 6-dimension scoring rubric. Minimum required: **8/10**. If below 8, loop back to step 2 (delegate to the implementation agent with the review findings and `task_id` to resume the session) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.

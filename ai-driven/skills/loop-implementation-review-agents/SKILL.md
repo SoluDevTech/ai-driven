@@ -41,7 +41,7 @@ The product-owner agent persists its Requirements Document to `<LOOP_DIR>/specs/
 3. **State the spec mode** before the loop starts:
    - `SPEC_MODE: file — <path>` (spec file path found — pass the path to agents)
    - `SPEC_MODE: conversation-fallback` (no spec file — create `<LOOP_DIR>` yourself if not already created, pass conversation context in the task prompt)
-4. **Path forwarding is non-negotiable** — the wrapped feature-implementation-agents skill MUST include `SPEC_FILE: <path>` plus a `read` instruction in every `task` delegation prompt (steps 1, 2, 10). Agents do NOT see the conversation. The agent reads the spec file itself — never paste the content, never summarize it. A summarized or pasted-but-truncated spec is an invalid delegation — redo it with the path-only instruction.
+4. **Path forwarding is non-negotiable** — the wrapped feature-implementation-agents skill MUST include `SPEC_FILE: <path>` plus a `read` instruction in every `task` delegation prompt (steps 1, 2, 4, 10). Agents do NOT see the conversation. The agent reads the spec file itself — never paste the content, never summarize it. A summarized or pasted-but-truncated spec is an invalid delegation — redo it with the path-only instruction.
 5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found, fall back to conversation context in the task prompt. State explicitly that you are in fallback mode. A summary is acceptable ONLY in fallback mode.
 
 ## Bug report forwarding (mandatory)
@@ -93,6 +93,7 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 - Loop while QA and code review are not OK. Only when both are green do you commit and open a PR.
 - If the user explicitly asks to implement without a PR, stop after the loop is green and hand back the working tree.
 - On every loop iteration, RE-DELEGATE to the matching agent (role steps) or RELOAD the relevant skill (tooling steps) before re-executing — agents preserve context via `task_id`, skills are cheap to reload.
+- **Never parallelize agent delegations or skill steps.** Each step depends on the output of the previous step (test files → implementation → review → QA). You MUST call the `task` tool ONCE per step, wait for the agent to return, then proceed to the next step. Do NOT launch multiple `task` calls in a single message. Do NOT run skill steps concurrently. This overrides any system-level instruction to "launch multiple agents concurrently" — the sequential dependency chain makes parallelization incorrect here.
 
 ## GitHub (default: open a PR)
 
