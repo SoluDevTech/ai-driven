@@ -28,15 +28,15 @@ The wrapped feature-implementation-agents skill writes a trace event to `<repo-r
 
 ## Spec file forwarding (mandatory)
 
-The product-owner agent persists its Requirements Document to `.opencode/specs/<slug>.md` and prints a `SPEC_FILE: <path>` pointer line. You MUST consume this spec and ensure the wrapped feature-implementation-agents skill forwards it IN FULL to every delegated agent.
+The product-owner agent persists its Requirements Document to `.opencode/specs/<slug>.md` and prints a `SPEC_FILE: <path>` pointer line. You MUST consume this spec and ensure the wrapped feature-implementation-agents skill passes its PATH to every delegated agent (not the content).
 
 1. **Detect the spec source** — check if `$ARGUMENTS` (or the user's input) contains a file path matching `.opencode/specs/*.md`. Also look for a `SPEC_FILE: <path>` line in the conversation history.
-2. **Read the spec file** — if found, read the FULL file content with the `read` tool. The wrapped feature-implementation-agents skill will use this content in every agent delegation prompt.
+2. **Store the path only** — if found, store the path. Do NOT read the content and do NOT copy it into task prompts. The wrapped feature-implementation-agents skill passes the path to agents; agents read the file themselves with `read`.
 3. **State the spec mode** before the loop starts:
-   - `SPEC_MODE: file — <path>` (spec file found and read)
-   - `SPEC_MODE: conversation-fallback` (no spec file, using conversation history)
-4. **Full forwarding is non-negotiable** — the wrapped feature-implementation-agents skill MUST include the FULL spec content verbatim in every `task` delegation prompt (steps 1, 2, 10). Agents do NOT see the conversation. A summarized spec is an invalid delegation — redo it with the full content.
-5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found, fall back to conversation context. State explicitly that you are in fallback mode.
+   - `SPEC_MODE: file — <path>` (spec file path found — pass the path to agents)
+   - `SPEC_MODE: conversation-fallback` (no spec file — pass conversation context in the task prompt)
+4. **Path forwarding is non-negotiable** — the wrapped feature-implementation-agents skill MUST include `SPEC_FILE: <path>` plus a `read` instruction in every `task` delegation prompt (steps 1, 2, 10). Agents do NOT see the conversation. The agent reads the spec file itself — never paste the content, never summarize it. A summarized or pasted-but-truncated spec is an invalid delegation — redo it with the path-only instruction.
+5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found, fall back to conversation context in the task prompt. State explicitly that you are in fallback mode. A summary is acceptable ONLY in fallback mode.
 
 ## Skill + agent loading is mandatory at every step
 

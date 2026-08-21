@@ -65,15 +65,20 @@ If ambiguous or mixed, ask the user which stack to target. Record the detected s
 
 ## Spec file handling (mandatory, before step 1)
 
-The product-owner agent persists its Requirements Document to `.opencode/specs/<slug>.md`. You MUST consume this spec and forward it IN FULL to every delegated agent.
+The product-owner agent persists its Requirements Document to `.opencode/specs/<slug>.md`. You MUST consume this spec and ensure every delegated agent reads it IN FULL. **Pass the path, not the content** — agents read the file themselves with the `read` tool; you do NOT paste the spec content into task prompts.
 
 1. **Detect the spec source** — check if `$ARGUMENTS` (or the user's input) contains a file path matching `.opencode/specs/*.md` or any `.md` spec path. Also look for a `SPEC_FILE: <path>` line in the conversation history (the product-owner agent prints this line when it persists the spec).
-2. **Read the spec file** — if a spec file path is found, call the `read` tool to load the FULL file content. Store it as the spec context. Do NOT summarize it.
+2. **Store the path only** — if a spec file path is found, store it. Do NOT read the content yourself and do NOT copy it into task prompts. You will pass the PATH to agents and they read it themselves.
 3. **State which mode you are in** before starting step 1:
-   - `SPEC_MODE: file — <path>` (spec file found and read)
-   - `SPEC_MODE: conversation-fallback` (no spec file, using conversation history)
-4. **Forward the full spec in every agent delegation** (steps 1, 2, 10) — when you call the `task` tool, include the FULL spec content verbatim in the task prompt. Agents do NOT see the conversation; they only receive what you put in the task prompt. A summarized spec is an invalid delegation — redo it with the full content.
-5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found in the conversation, fall back to whatever requirements context is available in the conversation history. State explicitly that you are in fallback mode.
+   - `SPEC_MODE: file — <path>` (spec file path found — pass the path to agents)
+   - `SPEC_MODE: conversation-fallback` (no spec file — pass conversation context in the task prompt)
+4. **Forward the path in every agent delegation** (steps 1, 2, 10) — when you call the `task` tool, include this block in the task prompt (replace `<path>` with the actual spec file path):
+   ```
+   SPEC_FILE: <path>
+   Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Base your work on the acceptance criteria, edge cases, and functional requirements from the spec.
+   ```
+   Agents do NOT see the conversation; they only receive what you put in the task prompt. The agent MUST read the file itself — never paste the content, never summarize it. A summarized spec or a pasted-but-truncated spec is an invalid delegation — redo it with the path-only instruction.
+5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found in the conversation, fall back to whatever requirements context is available in the conversation history and include it in the task prompt. State explicitly that you are in fallback mode (`SPEC_MODE: conversation-fallback`). A summary is acceptable ONLY in fallback mode.
 
 ### Agent selection map per stack
 
@@ -137,13 +142,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 1. Test-First Development — `test-writer` agent
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: test-writer`. The task prompt MUST:
-   - Include the FULL requirements spec verbatim (copy the entire spec file content or conversation spec — do NOT summarize):
+   - Include the spec pointer block (NOT the spec content):
      ```
-     Here is the full requirements spec:
-     <paste full spec content here>
-
-     Base your test cases on the acceptance criteria, edge cases, and functional requirements from this spec.
+     SPEC_FILE: <path>
+     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Base your test cases on the acceptance criteria, edge cases, and functional requirements from the spec.
      ```
+     If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
    - Instruct the agent to end its returned message with `AGENT_CONFIRM: test-writer delegated on step 1 → <N> failing test files written`.
 2. the agent auto-detects the stack and loads `test-writer-<lang>` + hexagonal + async skills via its frontmatter logic.
 3. `bash .../trace.sh "<repo-root>" "<loop_id>" "1" "agent" "test-writer" "delegated" "<N> test files"`.
@@ -152,11 +156,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 2. Implementation — hexagonal agent
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: <fastapi-hexagonal | react-hexagonal | nestjs-hexagonal>` per the detected stack. The task prompt MUST:
-   - Include the FULL requirements spec verbatim (copy the entire spec file content or conversation spec — do NOT summarize):
+   - Include the spec pointer block (NOT the spec content):
      ```
-     Here is the full requirements spec:
-     <paste full spec content here>
+     SPEC_FILE: <path>
+     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Base your implementation on the acceptance criteria, edge cases, and functional requirements from the spec.
      ```
+     If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
    - Forward the test files from step 1 (file paths + brief description of what each test covers).
    - Instruct the agent to end its returned message with `AGENT_CONFIRM: <agent> delegated on step 2 → <N> files implemented`.
 2. the agent's `skills:` frontmatter auto-loads architecture/async/performance skills.
@@ -216,13 +221,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 10. Tester-QA — `tester-qa` agent
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: tester-qa`. The task prompt MUST:
-   - Include the FULL requirements spec verbatim (copy the entire spec file content or conversation spec — do NOT summarize):
+   - Include the spec pointer block (NOT the spec content):
      ```
-     Here is the full requirements spec:
-     <paste full spec content here>
-
-     Validate all acceptance criteria and edge cases from this spec end-to-end. The NEW e2e tests you write MUST cover the happy path, error cases, and edge cases listed in the spec.
+     SPEC_FILE: <path>
+     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Validate all acceptance criteria and edge cases from this spec end-to-end. The NEW e2e tests you write MUST cover the happy path, error cases, and edge cases listed in the spec.
      ```
+     If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
    - Forward the list of implemented files from step 2.
    - Instruct the agent to end its returned message with `AGENT_CONFIRM: tester-qa delegated on step 10 → <N> e2e specs written, <N> bugs found`.
 2. the agent restarts impacted app containers, explores the app via curl + Chrome DevTools MCP, and writes NEW e2e Playwright specs in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough. If bugs found, loop back to step 2 with the bug report and re-run steps 3-10.
@@ -248,7 +252,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ## Guidelines
 
 - The user provides the spec/requirements as input to the loop — no discovery phase inside the loop. Prefer a spec file path (`.opencode/specs/<slug>.md`) produced by the product-owner agent. Fall back to conversation context only if no spec file is available.
-- **NEVER summarize the spec when delegating to agents.** Agents do not see the conversation. They only receive what you put in the task prompt. A summarized spec produces incomplete tests, incomplete implementations, and incomplete QA. Always forward the full spec content verbatim.
-- If code review reveals issues, iterate back to implementation (delegate to the implementation agent with `task_id` to resume the session, and re-include the full spec in the task prompt).
+- **NEVER summarize a spec file. If a spec file exists, pass its PATH to the agent and instruct it to `read` the file in full. The agent reads the spec itself — you do NOT paste the content into the task prompt. A summarized or pasted-but-truncated spec is an invalid delegation.** If no spec file exists (fallback mode), include the available conversation context in the task prompt — a summary is acceptable ONLY in fallback mode.
+- If code review reveals issues, iterate back to implementation (delegate to the implementation agent with `task_id` to resume the session, and re-include the `SPEC_FILE: <path>` pointer in the task prompt).
 - When chaining multiple tickets, be EXTRA vigilant about completing all steps — this is when steps get skipped.
-- **Delegating is cheap.** When in doubt, delegate again to the matching agent with full context (full spec + previous step artifacts). The `task` tool is the canonical way to guarantee the agent's skills are loaded and the work is done by the right role.
+- **Delegating is cheap.** When in doubt, delegate again to the matching agent with the path pointer + previous step artifacts. The `task` tool is the canonical way to guarantee the agent's skills are loaded and the work is done by the right role.
