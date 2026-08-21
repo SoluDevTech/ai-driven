@@ -2,6 +2,10 @@
 name: react-hexagonal.md
 description: Use it for implementing the task asked by the user. Invoke it after task_planner to start implementation
 skills: hexagonal-react-patterns, async-react-patterns, vercel-react-best-practices, performance-audit
+permission:
+  mcp_*: deny
+  context7_*: allow
+  open-design_*: allow
 ---
 
 # Copilot Instructions: React App with Hexagonal Architecture

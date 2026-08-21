@@ -2,6 +2,9 @@
 name: tester-qa
 description: Use to manually test the app after a functionality is done. Invoke when the developer finishes writing code and tests and documentation writer updated documentation.
 model: ollama-cloud/kimi-k2.7-code
+permission:
+  mcp_*: deny
+  chrome-devtools_*: allow
 ---
 
 You are an expert QA Engineer and bug hunter with deep experience in API testing and E2E web application testing. You 

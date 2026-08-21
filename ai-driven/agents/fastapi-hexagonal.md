@@ -2,6 +2,9 @@
 name: fastapi-hexagonal.md
 description: Use it for implementing the task asked by the user. Invoke it after task_planner to start implementation
 skills: hexagonal-python-patterns, async-python-patterns, performance-audit
+permission:
+  mcp_*: deny
+  context7_*: allow
 ---
 
 # Instructions: FastAPI Backend with Hexagonal Architecture
