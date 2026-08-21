@@ -73,22 +73,70 @@ Detect the target stack from the repo files. This determines which hexagonal age
 
 If ambiguous or mixed, ask the user which stack to target. Record the detected stack; you will use it to pick the implementation agent in steps 1, 2, and 10.
 
-## Spec file handling (mandatory, before step 1)
+## Artifact forwarding (mandatory, before step 1)
 
-The product-owner agent persists its Requirements Document to `<LOOP_DIR>/specs/<slug>.md` and prints `LOOP_DIR: <absolute-path>` + `SPEC_FILE: <absolute-path>` pointer lines. You MUST consume this spec and ensure every delegated agent reads it IN FULL. **Pass the path, not the content** — agents read the file themselves with the `read` tool; you do NOT paste the spec content into task prompts.
+Every stage produces an artifact. Every artifact is either persisted to the loop directory or lives in the repo. Every artifact has a pointer line. The orchestrator collects all available pointers and includes the relevant ones in every agent's task prompt. Each agent reads the forwarded files in full.
 
-1. **Detect the spec source** — check if `$ARGUMENTS` (or the user's input) contains a `LOOP_DIR: <absolute-path>` or `SPEC_FILE: <absolute-path>` pointer line, or a file path matching `~/.config/opencode/loops/loop-*/specs/*.md`. Also look for these lines in the conversation history (the product-owner agent prints them when it persists the spec). Extract `LOOP_DIR` from `LOOP_DIR:` directly, or from `SPEC_FILE:` by stripping `/specs/<slug>.md`.
-2. **Store the path only** — if a spec file path is found, store it. Do NOT read the content yourself and do NOT copy it into task prompts. You will pass the PATH to agents and they read it themselves.
-3. **State which mode you are in** before starting step 1:
-   - `SPEC_MODE: file — <path>` (spec file path found — pass the path to agents)
-   - `SPEC_MODE: conversation-fallback` (no spec file — create `<LOOP_DIR>` yourself if not already created, pass conversation context in the task prompt)
-4. **Forward the path in every agent delegation** (steps 1, 2, 4, 10) — when you call the `task` tool, include this block in the task prompt (replace `<path>` with the actual absolute spec file path):
+**Pass the path, not the content** — agents read the files themselves with the `read` tool; you do NOT paste file contents into task prompts.
+
+### Artifact registry
+
+| Artifact | Pointer line | Produced at | Persisted to | Forwarded to |
+|---|---|---|---|---|
+| Spec | `SPEC_FILE: <path>` | product-owner | `<LOOP_DIR>/specs/<slug>.md` | Steps 1, 2, 4, 10 |
+| Test files | `TEST_FILES: <paths>` | step 1 (test-writer) | in repo — agent returns paths | Steps 4, 10 (NOT step 2) |
+| Impl files | `IMPL_FILES: <paths>` | step 2 (impl) | in repo — agent returns paths | Steps 4, 10 |
+| Code review | `REVIEW: <path>` | step 4 (code-reviewer) | `<LOOP_DIR>/code-reviews/<slug>.md` | Step 2 (on loop-back), step 10 |
+| Bug report | `BUG_REPORT: <path>` | step 10 (tester-qa) | `<LOOP_DIR>/bug-reports/<slug>.md` | Step 2 (on loop-back), step 4 (on re-review) |
+
+### Per-stage forwarding matrix
+
+| Step | Agent | Gets in CONTEXT block |
+|---|---|---|
+| 1 (TDD) | test-writer | `SPEC_FILE` |
+| 2 (Impl) | impl agent | `SPEC_FILE` + (on loop-back: `REVIEW` + `BUG_REPORT`) — **no TEST_FILES** (impl works from the spec; the reviewer validates tests↔impl consistency) |
+| 4 (Review) | code-reviewer | `SPEC_FILE` + `TEST_FILES` + `IMPL_FILES` + (on re-review: prev `REVIEW` + `BUG_REPORT` if QA also failed) |
+| 10 (QA) | tester-qa | `SPEC_FILE` + `TEST_FILES` + `IMPL_FILES` + `REVIEW` + (on loop-back: prev `BUG_REPORT`) |
+
+### LOOP_DIR detection
+
+Detect the `LOOP_DIR` (absolute path to the per-loop directory under `~/.config/opencode/loops/loop-<timestamp>/`) from the conversation or `$ARGUMENTS`:
+1. Look for a `LOOP_DIR: <absolute-path>` pointer line (printed by the product-owner agent).
+2. Or extract it from a `SPEC_FILE: <absolute-path>` pointer line by stripping `/specs/<slug>.md` from the tail.
+3. **Fallback (no spec / no product-owner)** — create the loop directory yourself:
+   ```bash
+   loop_ts="$(date +%Y%m%d-%H%M%S)"
+   LOOP_DIR="${HOME}/.config/opencode/loops/loop-${loop_ts}"
+   mkdir -p "${LOOP_DIR}"
    ```
-   SPEC_FILE: <path>
-   Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Base your work on the acceptance criteria, edge cases, and functional requirements from the spec.
-   ```
-   Agents do NOT see the conversation; they only receive what you put in the task prompt. The agent MUST read the file itself — never paste the content, never summarize it. A summarized spec or a pasted-but-truncated spec is an invalid delegation — redo it with the path-only instruction.
-5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found in the conversation, fall back to whatever requirements context is available in the conversation history and include it in the task prompt. State explicitly that you are in fallback mode (`SPEC_MODE: conversation-fallback`). A summary is acceptable ONLY in fallback mode.
+   Derive `loop_id` from the directory name: `loop_id="$(basename "${LOOP_DIR}")"`.
+
+### Orchestrator collection rule
+
+After each agent returns, grep the pointer lines from its output and store them. On the next `task` call, assemble a CONTEXT block from all stored pointers relevant to that step (per the forwarding matrix) and include it in the task prompt.
+
+### CONTEXT block format
+
+Include this block in every `task` delegation prompt, with only the lines for artifacts that exist (drop empty/`none` pointers):
+
+```
+ARTIFACT CONTEXT (read ALL files IN FULL before starting — do NOT skip, do NOT summarize):
+SPEC_FILE: <LOOP_DIR>/specs/<slug>.md
+TEST_FILES: /repo/path/test1.spec.ts, /repo/path/test2.spec.ts
+IMPL_FILES: /repo/path/impl1.ts, /repo/path/impl2.ts
+REVIEW: <LOOP_DIR>/code-reviews/<slug>.md
+BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md
+```
+
+For file-list pointers (`TEST_FILES`, `IMPL_FILES`), list comma-separated absolute repo paths. For file-content pointers (`SPEC_FILE`, `REVIEW`, `BUG_REPORT`), list a single absolute path. Agents use the `read` tool to read each file in full.
+
+### Spec mode
+
+State which mode you are in before starting step 1:
+- `SPEC_MODE: file — <path>` (spec file path found — pass the path to agents)
+- `SPEC_MODE: conversation-fallback` (no spec file — create `<LOOP_DIR>` yourself, pass conversation context in the task prompt)
+
+Fallback: if no spec file path is provided and no `SPEC_FILE` line is found, fall back to conversation context in the task prompt. State explicitly that you are in fallback mode. A summary is acceptable ONLY in fallback mode.
 
 ### Agent selection map per stack
 
@@ -127,10 +175,10 @@ You MUST forward relevant artifacts between agents: test files → implementatio
 You MUST maintain this checklist throughout the implementation. Print it before creating the PR to verify completeness:
 
 ```
-- [ ] 1. TDD — test-writer agent → failing tests written (Red)
-- [ ] 2. IMPLEMENTATION — hexagonal agent (backend or frontend) → feature implemented (Green)
+- [ ] 1. TDD — test-writer agent → failing tests written (Red) + `TEST_FILES: <paths>` pointer returned
+- [ ] 2. IMPLEMENTATION — hexagonal agent (backend or frontend) → feature implemented (Green) + `IMPL_FILES: <paths>` pointer returned
 - [ ] 3. TEST SUITE — full test suite run, all green
-- [ ] 4. CODE REVIEW — code-reviewer-<lang> agent → 0 critical + score ≥ 8/10
+- [ ] 4. CODE REVIEW — code-reviewer-<lang> agent → 0 critical + score ≥ 8/10 + `REVIEW: <path>` pointer returned
 - [ ] 5. CODE SIMPLIFIER — code-simplifier skill → complexity reduced
 - [ ] 6. LINTER — linter skill → 0 lint issues
 - [ ] 7. UNIT TESTS — all unit tests green
@@ -152,31 +200,39 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 1. Test-First Development — `test-writer` agent
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: test-writer`. The task prompt MUST:
-   - Include the spec pointer block (NOT the spec content):
+   - Include the CONTEXT block (per the forwarding matrix, step 1 gets `SPEC_FILE` only):
      ```
+     ARTIFACT CONTEXT (read ALL files IN FULL before starting — do NOT skip, do NOT summarize):
      SPEC_FILE: <path>
-     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Base your test cases on the acceptance criteria, edge cases, and functional requirements from the spec.
      ```
      If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
-   - Instruct the agent to end its returned message with `AGENT_CONFIRM: test-writer delegated on step 1 → <N> failing test files written`.
+   - Instruct the agent to end its returned message with `TEST_FILES: <comma-separated absolute paths>` followed by `AGENT_CONFIRM: test-writer delegated on step 1 → <N> failing test files written`.
 2. the agent auto-detects the stack and loads `test-writer-<lang>` + hexagonal + async skills via its frontmatter logic.
-3. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "1" "agent" "test-writer" "delegated" "<N> test files"`.
-4. before step 2: `verify-step.sh ... "1" "agent" "test-writer"` — if fail, redo step 1.
+3. **Collect the `TEST_FILES:` pointer** from the agent's returned message — grep the line and store it for forwarding to steps 4 and 10.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "1" "agent" "test-writer" "delegated" "<N> test files"`.
+5. before step 2: `verify-step.sh ... "1" "agent" "test-writer"` — if fail, redo step 1.
 
 ### 2. Implementation — hexagonal agent
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: <fastapi-hexagonal | react-hexagonal | nestjs-hexagonal>` per the detected stack. The task prompt MUST:
-   - Include the spec pointer block (NOT the spec content):
+   - Include the CONTEXT block (per the forwarding matrix, step 2 gets `SPEC_FILE` only on first pass — **no TEST_FILES**; on loop-back add `REVIEW` + `BUG_REPORT`):
      ```
+     ARTIFACT CONTEXT (read ALL files IN FULL before starting — do NOT skip, do NOT summarize):
      SPEC_FILE: <path>
-     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Base your implementation on the acceptance criteria, edge cases, and functional requirements from the spec.
+     ```
+     On loop-back (code review or QA failed), add the review and/or bug report pointers:
+     ```
+     ARTIFACT CONTEXT (read ALL files IN FULL before starting — do NOT skip, do NOT summarize):
+     SPEC_FILE: <path>
+     REVIEW: <LOOP_DIR>/code-reviews/<slug>.md
+     BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md
      ```
      If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
-   - Forward the test files from step 1 (file paths + brief description of what each test covers).
-   - Instruct the agent to end its returned message with `AGENT_CONFIRM: <agent> delegated on step 2 → <N> files implemented`.
+   - Instruct the agent to end its returned message with `IMPL_FILES: <comma-separated absolute paths>` followed by `AGENT_CONFIRM: <agent> delegated on step 2 → <N> files implemented`.
 2. the agent's `skills:` frontmatter auto-loads architecture/async/performance skills.
-3. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "2" "agent" "<agent_name>" "delegated" "<N> files modified"`.
-4. before step 3: `verify-step.sh ... "2" "agent" "<agent_name>"` — if fail, redo step 2.
+3. **Collect the `IMPL_FILES:` pointer** from the agent's returned message — grep the line and store it for forwarding to steps 4 and 10.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "2" "agent" "<agent_name>" "delegated" "<N> files modified"`.
+5. before step 3: `verify-step.sh ... "2" "agent" "<agent_name>"` — if fail, redo step 2.
 
 ### 3. Full Test Suite
 1. Run the full test suite yourself via Bash: `uv run pytest tests/ -x -q` (Python), `npx vitest run` (TypeScript). All tests must pass with 0 failures. If a failure appears, loop back to step 2 via the implementation agent (use `task_id` to resume the session).
@@ -186,17 +242,31 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 4. Code Review
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: code-reviewer-<lang>` per the detected stack (Python → `code-reviewer-python`, React → `code-reviewer-react`, NestJS → `code-reviewer-nestjs`). The task prompt MUST:
-   - Include the spec pointer block (NOT the spec content — same convention as steps 1, 2, 10):
+   - Include the CONTEXT block (per the forwarding matrix, step 4 gets `SPEC_FILE` + `TEST_FILES` + `IMPL_FILES`; on re-review add prev `REVIEW` + `BUG_REPORT`):
      ```
+     ARTIFACT CONTEXT (read ALL files IN FULL before starting — do NOT skip, do NOT summarize):
      SPEC_FILE: <path>
-     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Validate the implementation against the acceptance criteria, edge cases, and functional requirements from the spec.
+     TEST_FILES: <comma-separated absolute paths from step 1>
+     IMPL_FILES: <comma-separated absolute paths from step 2>
+     ```
+     On re-review (loop-back after fixes), add the previous review and bug report if QA also failed:
+     ```
+     REVIEW: <LOOP_DIR>/code-reviews/<slug>.md
+     BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md
      ```
      If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
-   - Forward the list of implemented files from step 2 and test files from step 1.
-   - Instruct the agent to end its returned message with `AGENT_CONFIRM: code-reviewer-<lang> delegated on step 4 → score=<S>, critical=<N>`.
-2. the agent auto-loads `code-reviewer` + `hexagonal-<lang>-patterns` + `async-<lang>-patterns` + `performance-audit` + `test-writer-<lang>` via its frontmatter and runs on `ollama-cloud/kimi-k2.7-code`. The review uses the 6-dimension scoring rubric. Minimum required: **8/10**. If below 8, loop back to step 2 (delegate to the implementation agent with the review findings and `task_id` to resume the session) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
-3. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "4" "agent" "code-reviewer-<lang>" "delegated" "score=<S>, critical=<N>"`.
-4. before step 5: `verify-step.sh ... "4" "agent" "code-reviewer-<lang>"` — if fail, redo step 4.
+   - Include the review-persistence block (mandatory — the agent MUST persist the review to a file):
+     ```
+     REVIEW PERSISTENCE (mandatory):
+     - LOOP_DIR: <LOOP_DIR absolute path>
+     - Persist the FULL review to <LOOP_DIR>/code-reviews/<slug>.md (reuse the <slug> from the SPEC_FILE path). Run `mkdir -p <LOOP_DIR>/code-reviews/` first, then `write` the complete review — score table + summary + critical issues + improvements + minor suggestions + positive highlights — not a summary.
+     - Print `REVIEW: <LOOP_DIR>/code-reviews/<slug>.md` (absolute path) before the AGENT_CONFIRM line.
+     ```
+   - Instruct the agent to end its returned message with `REVIEW: <path>` followed by `AGENT_CONFIRM: code-reviewer-<lang> delegated on step 4 → score=<S>, critical=<N>, REVIEW: <path|none>`.
+2. the agent auto-loads `code-reviewer` + `hexagonal-<lang>-patterns` + `async-<lang>-patterns` + `performance-audit` + `test-writer-<lang>` via its frontmatter and runs on `ollama-cloud/kimi-k2.7-code`. The review uses the 6-dimension scoring rubric. Minimum required: **8/10**. If below 8, loop back to step 2 (delegate to the implementation agent with `task_id` to resume the session, include `SPEC_FILE` + `REVIEW` + `BUG_REPORT` in the CONTEXT block) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
+3. **Collect the `REVIEW:` pointer** from the agent's returned message — grep the line and store it for forwarding to step 10 and step 2 on loop-back.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "4" "agent" "code-reviewer-<lang>" "delegated" "score=<S>, critical=<N>, REVIEW: <path|none>"`.
+5. before step 5: `verify-step.sh ... "4" "agent" "code-reviewer-<lang>"` — if fail, redo step 4.
 
 ### 5. Code Simplifier
 **ACTIONS (in order):**
@@ -238,25 +308,32 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 10. Tester-QA — `tester-qa` agent
 **ACTIONS (in order):**
 1. call the `task` tool NOW with `subagent_type: tester-qa`. The task prompt MUST:
-   - Include the spec pointer block (NOT the spec content):
+   - Include the CONTEXT block (per the forwarding matrix, step 10 gets `SPEC_FILE` + `TEST_FILES` + `IMPL_FILES` + `REVIEW`; on loop-back add prev `BUG_REPORT`):
      ```
+     ARTIFACT CONTEXT (read ALL files IN FULL before starting — do NOT skip, do NOT summarize):
      SPEC_FILE: <path>
-     Use the `read` tool to read this spec file IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Validate all acceptance criteria and edge cases from this spec end-to-end. The NEW e2e tests you write MUST cover the happy path, error cases, and edge cases listed in the spec.
+     TEST_FILES: <comma-separated absolute paths from step 1>
+     IMPL_FILES: <comma-separated absolute paths from step 2>
+     REVIEW: <LOOP_DIR>/code-reviews/<slug>.md
+     ```
+     On loop-back (previous QA found bugs), add:
+     ```
+     BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md
      ```
      If in `SPEC_MODE: conversation-fallback`, include the available requirements context directly in the task prompt instead.
-   - Forward the list of implemented files from step 2.
-    - Include the bug-report persistence block (mandatory — the agent MUST persist bugs to a file, not just print them):
-      ```
-      BUG REPORT OUTPUT (mandatory):
-      - LOOP_DIR: <LOOP_DIR absolute path>
-      - If you find confirmed bugs, persist the FULL bug report to <LOOP_DIR>/bug-reports/<slug>.md (reuse the <slug> from the SPEC_FILE path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p <LOOP_DIR>/bug-reports/` first, then `write` the complete tickets to that file — not a summary.
-      - Print one line per confirmed bug right before the pointer line: `BUG-XXX | Severity | Layer | <one-line root cause>`.
-      - End your returned message with EXACTLY one pointer line: `BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md` (absolute path, bugs found) or `BUG_REPORT: none` (no bugs).
-      - This mirrors the SPEC_FILE pointer convention so the orchestrator can forward the path to the implementation agent on a loop-back.
-      ```
-    - Instruct the agent to end its returned message with `AGENT_CONFIRM: tester-qa delegated on step 10 → <N> e2e specs written, <N> bugs found, BUG_REPORT: <path|none>`.
- 2. the agent restarts impacted app containers, explores the app via curl + Chrome DevTools MCP, and writes NEW e2e Playwright specs in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough. If bugs found, loop back to step 2 with the bug report and re-run steps 3-10.
- 3. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "10" "agent" "tester-qa" "delegated" "<N> e2e specs, <N> bugs, BUG_REPORT: <path|none>"`.
+   - Include the bug-report persistence block (mandatory — the agent MUST persist bugs to a file, not just print them):
+     ```
+     BUG REPORT OUTPUT (mandatory):
+     - LOOP_DIR: <LOOP_DIR absolute path>
+     - If you find confirmed bugs, persist the FULL bug report to <LOOP_DIR>/bug-reports/<slug>.md (reuse the <slug> from the SPEC_FILE path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p <LOOP_DIR>/bug-reports/` first, then `write` the complete tickets to that file — not a summary.
+     - Print one line per confirmed bug right before the pointer line: `BUG-XXX | Severity | Layer | <one-line root cause>`.
+     - End your returned message with EXACTLY one pointer line: `BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md` (absolute path, bugs found) or `BUG_REPORT: none` (no bugs).
+     - This mirrors the SPEC_FILE pointer convention so the orchestrator can forward the path to the implementation agent on a loop-back.
+     ```
+   - Instruct the agent to end its returned message with `AGENT_CONFIRM: tester-qa delegated on step 10 → <N> e2e specs written, <N> bugs found, BUG_REPORT: <path|none>`.
+2. the agent restarts impacted app containers, explores the app via curl + Chrome DevTools MCP, and writes NEW e2e Playwright specs in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough. If bugs found, loop back to step 2 with the bug report and re-run steps 3-10.
+3. **Collect the `BUG_REPORT:` pointer** from the agent's returned message — grep the line and store it for forwarding to step 2 on loop-back.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "10" "agent" "tester-qa" "delegated" "<N> e2e specs, <N> bugs, BUG_REPORT: <path|none>"`.
  4. before step 11: `verify-step.sh ... "10" "agent" "tester-qa"` — if fail, redo step 10.
 
 #### Bug report consumption (orchestrator side, after step 10)
@@ -290,8 +367,8 @@ Grep the `BUG_REPORT: <path|none>` line from the tester-qa agent's returned mess
 ## Guidelines
 
 - The user provides the spec/requirements as input to the loop — no discovery phase inside the loop. Prefer a spec file path (`<LOOP_DIR>/specs/<slug>.md`) produced by the product-owner agent. Fall back to conversation context only if no spec file is available.
-- **NEVER summarize a spec file. If a spec file exists, pass its PATH to the agent and instruct it to `read` the file in full. The agent reads the spec itself — you do NOT paste the content into the task prompt. A summarized or pasted-but-truncated spec is an invalid delegation.** If no spec file exists (fallback mode), include the available conversation context in the task prompt — a summary is acceptable ONLY in fallback mode.
-- If code review reveals issues, iterate back to implementation (delegate to the implementation agent with `task_id` to resume the session, and re-include the `SPEC_FILE: <path>` pointer in the task prompt).
-- If QA reveals bugs, iterate back to implementation with BOTH the `SPEC_FILE: <path>` AND the `BUG_REPORT: <path>` pointer blocks in the task prompt (path-only — agents read the files themselves). Loop until the tester-qa agent returns `BUG_REPORT: none`.
+- **Artifact forwarding is systematic.** Every agent gets the CONTEXT block with all relevant artifact pointers (per the forwarding matrix). Never paste file contents — always pass paths and instruct agents to `read` in full. A summarized or pasted-but-truncated file is an invalid delegation.
+- **If code review reveals issues** (critical > 0 or score < 8), iterate back to implementation (delegate to the implementation agent with `task_id` to resume the session). Include `SPEC_FILE` + `REVIEW` in the CONTEXT block so the impl agent reads the review and knows exactly what to fix.
+- **If QA reveals bugs**, iterate back to implementation with `SPEC_FILE` + `REVIEW` + `BUG_REPORT` in the CONTEXT block (path-only — agents read the files themselves). Loop until the tester-qa agent returns `BUG_REPORT: none`.
 - When chaining multiple tickets, be EXTRA vigilant about completing all steps — this is when steps get skipped.
-- **Delegating is cheap.** When in doubt, delegate again to the matching agent with the path pointer + previous step artifacts. The `task` tool is the canonical way to guarantee the agent's skills are loaded and the work is done by the right role.
+- **Delegating is cheap.** When in doubt, delegate again to the matching agent with the CONTEXT block + previous step artifacts. The `task` tool is the canonical way to guarantee the agent's skills are loaded and the work is done by the right role.

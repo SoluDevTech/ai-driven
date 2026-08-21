@@ -41,3 +41,17 @@ Before creating a new component, **scout what already exists** and reuse/extend 
 - Forms: React Hook Form + Zod · Validation: Zod · Data fetching: TanStack Query
 - Testing: Bun test + React Testing Library (default) — vitest for eslint+prettier stacks
 - Linting/Formatting: Biome (default) — eslint + prettier if repo AGENTS.md says so
+
+## Return protocol (mandatory)
+
+End your returned message with a pointer line listing every file you created or modified (comma-separated absolute repo paths):
+
+```
+IMPL_FILES: /Users/yohan/git/soludev/myapp/src/auth/LoginPage.tsx, /Users/yohan/git/soludev/myapp/src/auth/hooks/useLogin.ts
+```
+
+The orchestrator greps this line and forwards the implementation file paths to the code-reviewer agent (step 4) and the tester-qa agent (step 10) so they can read the implementation in full. Then end with:
+
+```
+AGENT_CONFIRM: react-hexagonal delegated on step <N> → <N> files implemented
+```

@@ -36,3 +36,17 @@ Once the stack is detected, load the matching `test-writer-<lang>` skill and the
 - Mock an internal repository / TypeORM repository with `jest.fn()` / `unittest.mock` — use the real impl + in-memory SQLite
 - Assert on internal implementation details (spy on a private method)
 - Mock something just to make a test pass
+
+## Return protocol (mandatory)
+
+End your returned message with a pointer line listing every test file you wrote or modified (comma-separated absolute repo paths):
+
+```
+TEST_FILES: /Users/yohan/git/soludev/myapp/tests/auth/login.spec.ts, /Users/yohan/git/soludev/myapp/tests/auth/protected-routes.spec.ts
+```
+
+The orchestrator greps this line and forwards the test file paths to the code-reviewer agent (step 4) and the tester-qa agent (step 10) so they can read the tests in full. Then end with:
+
+```
+AGENT_CONFIRM: test-writer delegated on step <N> → <N> failing test files written
+```

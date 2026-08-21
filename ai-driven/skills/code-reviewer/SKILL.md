@@ -73,6 +73,24 @@ Keep this section concise.
 ### Positive Highlights ✅
 Acknowledge what was done well. Be specific — this reinforces good practices.
 
+## Review persistence (mandatory)
+
+You MUST persist your full review to a file so the orchestrator can forward it to the implementation agent on a loop-back.
+
+**LOOP_DIR derivation** — detect the loop directory from the conversation or `$ARGUMENTS` in this order:
+1. A `LOOP_DIR: <absolute-path>` pointer line (printed by the product-owner agent or the orchestrator).
+2. The `SPEC_FILE: <absolute-path>` pointer line — strip `/specs/<slug>.md` from the tail to recover `LOOP_DIR`.
+
+If neither pointer is present, ask the orchestrator for the `LOOP_DIR` absolute path. Do NOT guess or create a new loop directory yourself.
+
+**Slug derivation** — reuse the `<slug>` of the spec file (the filename without extension in `<LOOP_DIR>/specs/<slug>.md`).
+
+**Steps in order:**
+1. `mkdir -p <LOOP_DIR>/code-reviews/`
+2. Write the FULL review (score table + summary + critical issues + improvements + minor suggestions + positive highlights) to `<LOOP_DIR>/code-reviews/<slug>.md` using the `write` tool — complete content, not a summary.
+3. Print a mandatory pointer line (absolute path) at the end of your output:
+   - `REVIEW: <LOOP_DIR>/code-reviews/<slug>.md`
+
 ## Feedback Style
 
 - Be direct and specific. Reference exact file names, line numbers, and variable names.

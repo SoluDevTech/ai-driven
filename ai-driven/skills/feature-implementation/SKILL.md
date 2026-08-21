@@ -96,10 +96,10 @@ The product-owner agent persists its Requirements Document to `<LOOP_DIR>/specs/
 You MUST maintain this checklist throughout the implementation. Print it before creating the PR to verify completeness:
 
 ```
-- [ ] 1. TDD — load test-writer-<lang> + hexagonal-<lang> + async-<lang> skills, write failing tests (Red)
-- [ ] 2. IMPLEMENTATION — load hexagonal-<lang> + async-<lang> + performance-audit skills, implement (Green)
+- [ ] 1. TDD — load test-writer-<lang> + hexagonal-<lang> + async-<lang> skills, write failing tests (Red), print `TEST_FILES: <paths>`
+- [ ] 2. IMPLEMENTATION — load hexagonal-<lang> + async-<lang> + performance-audit skills, implement (Green), print `IMPL_FILES: <paths>`
 - [ ] 3. TEST SUITE — run full test suite, all green
-- [ ] 4. CODE REVIEW — load code-reviewer skill, review, 0 critical + score ≥ 8/10
+- [ ] 4. CODE REVIEW — load code-reviewer skill, review, 0 critical + score ≥ 8/10, persist to `<LOOP_DIR>/code-reviews/<slug>.md`, print `REVIEW: <path>`
 - [ ] 5. CODE SIMPLIFIER — load code-simplifier skill, refactor
 - [ ] 6. LINTER — load linter skill, run ruff / eslint+prettier
 - [ ] 7. UNIT TESTS — run all unit tests
@@ -122,17 +122,19 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `test-writer-<lang>` (and `hexagonal-<lang>`, `async-<lang>` per the skill map).
 2. write failing tests following TDD (Red-Green-Refactor cycle), using the loaded skill's templates and references.
-3. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 1`.
-4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "1" "skill" "test-writer-<lang>" "loaded" "<N> test files written"`.
-5. before step 2: `bash .../verify-step.sh ... "1" "skill" "test-writer-<lang>"` — if fail, redo step 1.
+3. print `TEST_FILES: <comma-separated absolute paths to every test file written>` so the review (step 4) and QA (step 10) can read them.
+4. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 1`.
+5. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "1" "skill" "test-writer-<lang>" "loaded" "<N> test files written"`.
+6. before step 2: `bash .../verify-step.sh ... "1" "skill" "test-writer-<lang>"` — if fail, redo step 1.
 
 ### 2. Implementation
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `hexagonal-<lang>` + `async-<lang>` + `performance-audit` (per the skill map).
-2. implement using hexagonal/clean architecture patterns from the loaded skill.
-3. print `SKILL_CONFIRM: hexagonal-<lang> loaded and applied on step 2`.
-4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "2" "skill" "hexagonal-<lang>" "loaded" "<N> files modified"`.
-5. before step 3: `verify-step.sh ... "2" "skill" "hexagonal-<lang>"` — if fail, redo step 2.
+2. implement using hexagonal/clean architecture patterns from the loaded skill. Implement from the spec — do NOT read the test files (the reviewer validates tests↔impl consistency).
+3. print `IMPL_FILES: <comma-separated absolute paths to every file created or modified>` so the review (step 4) and QA (step 10) can read them.
+4. print `SKILL_CONFIRM: hexagonal-<lang> loaded and applied on step 2`.
+5. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "2" "skill" "hexagonal-<lang>" "loaded" "<N> files modified"`.
+6. before step 3: `verify-step.sh ... "2" "skill" "hexagonal-<lang>"` — if fail, redo step 2.
 
 ### 3. Full Test Suite
 1. Run the FULL test suite: `uv run pytest tests/ -x -q` (Python), `npx vitest run` (TypeScript). All tests must pass with 0 failures. If a failure appears, loop back to step 2 (reload the impl skills first).
@@ -142,10 +144,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 4. Code Review
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `code-reviewer`, then load the stack-specific skills: `hexagonal-<lang>-patterns`, `async-<lang>-patterns`, `performance-audit`, `test-writer-<lang>` (per the skill map). This enriches the review with stack-specific knowledge — architecture compliance, async correctness, performance patterns, and test quality conventions.
-2. review the implementation. The skill outputs an overall score on 10. Minimum required: **8/10**. If below 8, loop back to step 2 (reload impl skills) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
-3. print `SKILL_CONFIRM: code-reviewer loaded and applied on step 4`.
-4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "4" "skill" "code-reviewer" "loaded" "score=<S>, critical=<N>"`.
-5. before step 5: `verify-step.sh ... "4" "skill" "code-reviewer"` — if fail, redo step 4.
+2. review the implementation. Read the `TEST_FILES` and `IMPL_FILES` from step 1 and 2. The skill outputs an overall score on 10. Minimum required: **8/10**. If below 8, loop back to step 2 (reload impl skills, re-read the review file in full before fixing) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
+3. **Review persistence (mandatory)** — persist the FULL review to `<LOOP_DIR>/code-reviews/<slug>.md` (reuse the `<slug>` from the `SPEC_FILE` path). Run `mkdir -p <LOOP_DIR>/code-reviews/` first, then `write` the complete review — score table + summary + critical issues + improvements + minor suggestions + positive highlights — not a summary.
+4. print `REVIEW: <LOOP_DIR>/code-reviews/<slug>.md` (absolute path) so the loop-back and step 10 can read it.
+5. print `SKILL_CONFIRM: code-reviewer loaded and applied on step 4`.
+6. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "4" "skill" "code-reviewer" "loaded" "score=<S>, critical=<N>, REVIEW: <path|none>"`.
+7. before step 5: `verify-step.sh ... "4" "skill" "code-reviewer"` — if fail, redo step 4.
 
 ### 5. Code Simplifier
 **ACTIONS (in order):**
@@ -191,7 +195,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 3. **Bug report persistence (mandatory)** — if you find confirmed bugs, persist the FULL bug report to `<LOOP_DIR>/bug-reports/<slug>.md` (reuse the `<slug>` from the `SPEC_FILE` path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p <LOOP_DIR>/bug-reports/` first, then `write` the complete tickets to that file — not a summary. Use the ticket format from the `tester-qa` skill (Severity, Feature, Layer, Observed/Expected behavior, Steps to reproduce, Evidence, Root cause hypothesis). This keeps the bug report co-located with the spec (`<LOOP_DIR>/specs/<slug>.md`) and the loop trace (`<LOOP_DIR>/loop-trace.md`) and lets you re-read it on a loop-back.
 4. Print one line per confirmed bug right before the pointer line: `BUG-XXX | Severity | Layer | <one-line root cause hypothesis>`.
 5. Print a mandatory pointer line so the loop is self-describing: `BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md` (absolute path, bugs found) or `BUG_REPORT: none` (no bugs).
-6. If bugs found: iterate back to step 2 (reload the impl skills first), re-read the bug report file IN FULL (`read` tool) before fixing, then re-run steps 3-10. Loop until `BUG_REPORT: none`.
+6. If bugs found: iterate back to step 2 (reload the impl skills first), re-read BOTH the bug report AND the code review files IN FULL (`read` tool) before fixing, then re-run steps 3-10. Loop until `BUG_REPORT: none`.
 7. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 10`.
 8. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "10" "skill" "test-writer-<lang>" "loaded" "<N> e2e specs written, <N> bugs, BUG_REPORT: <path|none>"`.
 9. before step 11: `verify-step.sh ... "10" "skill" "test-writer-<lang>"` — if fail, redo step 10.

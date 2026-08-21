@@ -37,3 +37,17 @@ You are a TypeScript/NestJS expert. Create a backend following hexagonal archite
 - ❌ Complex transformation methods (`fromEntity`, `toEntity`)
 - ❌ `index.ts` files for re-exporting dependencies across layers
 - ❌ Direct adapter injection in use cases (always inject via port tokens)
+
+## Return protocol (mandatory)
+
+End your returned message with a pointer line listing every file you created or modified (comma-separated absolute repo paths):
+
+```
+IMPL_FILES: /Users/yohan/git/soludev/myapp/src/auth/login.use-case.ts, /Users/yohan/git/soludev/myapp/src/auth/auth.controller.ts
+```
+
+The orchestrator greps this line and forwards the implementation file paths to the code-reviewer agent (step 4) and the tester-qa agent (step 10) so they can read the implementation in full. Then end with:
+
+```
+AGENT_CONFIRM: nestjs-hexagonal delegated on step <N> → <N> files implemented
+```

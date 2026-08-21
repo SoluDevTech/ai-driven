@@ -134,7 +134,25 @@ Acknowledge what was done well. Be specific - this reinforces good practices.
 - Do NOT block a PR for stylistic reasons alone if no formatter is configured.
 - If the codebase has existing technical debt in the same area, acknowledge it but do not penalize the author for pre-existing issues.
 
+## Review persistence (mandatory)
+
+You MUST persist your full review to a file so the orchestrator can forward it to the implementation agent on a loop-back.
+
+**LOOP_DIR derivation** — detect the loop directory from the conversation or `$ARGUMENTS` in this order:
+1. A `LOOP_DIR: <absolute-path>` pointer line (printed by the product-owner agent or the orchestrator).
+2. The `SPEC_FILE: <absolute-path>` pointer line — strip `/specs/<slug>.md` from the tail to recover `LOOP_DIR`.
+
+If neither pointer is present, ask the orchestrator for the `LOOP_DIR` absolute path. Do NOT guess or create a new loop directory yourself.
+
+**Slug derivation** — reuse the `<slug>` of the spec file (the filename without extension in `<LOOP_DIR>/specs/<slug>.md`).
+
+**Steps in order:**
+1. `mkdir -p <LOOP_DIR>/code-reviews/`
+2. Write the FULL review (score table + summary + critical issues + improvements + minor suggestions + positive highlights) to `<LOOP_DIR>/code-reviews/<slug>.md` using the `write` tool — complete content, not a summary.
+3. Print a mandatory pointer line (absolute path) before the `AGENT_CONFIRM` line:
+   - `REVIEW: <LOOP_DIR>/code-reviews/<slug>.md`
+
 ## Confirmation
 
 End your returned message with:
-`AGENT_CONFIRM: code-reviewer-react delegated on step <N> -> score=<S>, critical=<N>`
+`AGENT_CONFIRM: code-reviewer-react delegated on step <N> -> score=<S>, critical=<N>, REVIEW: <path|none>`

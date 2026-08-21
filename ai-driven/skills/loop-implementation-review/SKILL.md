@@ -58,7 +58,7 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 
 ## Code review gate
 
-- The code review (step 4) loads `code-reviewer` + stack-specific skills (`hexagonal-<lang>-patterns`, `async-<lang>-patterns`, `performance-audit`, `test-writer-<lang>`) to enrich the review with architecture compliance, async correctness, performance patterns, and test quality conventions. It MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to implementation (reload the impl skills first) if any critical issue remains or the score is below 8.
+- The code review (step 4) loads `code-reviewer` + stack-specific skills (`hexagonal-<lang>-patterns`, `async-<lang>-patterns`, `performance-audit`, `test-writer-<lang>`) to enrich the review with architecture compliance, async correctness, performance patterns, and test quality conventions. It MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. It MUST persist the full review to `<LOOP_DIR>/code-reviews/<slug>.md` and print `REVIEW: <path>`. Loop back to implementation (reload the impl skills first, re-read the review file in full before fixing) if any critical issue remains or the score is below 8.
 
 ## Loop
 

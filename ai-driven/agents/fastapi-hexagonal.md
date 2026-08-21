@@ -197,3 +197,17 @@ db_user = UserModel.from_entity(user_entity)
 2. **Use cases** depend on **ports** (abstractions), never on **adapters**
 3. Transformations: `Class(**other.__dict__)` or `Class(**model.model_dump())`
 5. SOLID + KISS above all: simplicity and design principles
+
+## Return protocol (mandatory)
+
+End your returned message with a pointer line listing every file you created or modified (comma-separated absolute repo paths):
+
+```
+IMPL_FILES: /Users/yohan/git/soludev/myapp/src/auth/login.py, /Users/yohan/git/soludev/myapp/src/auth/routes.py
+```
+
+The orchestrator greps this line and forwards the implementation file paths to the code-reviewer agent (step 4) and the tester-qa agent (step 10) so they can read the implementation in full. Then end with:
+
+```
+AGENT_CONFIRM: fastapi-hexagonal delegated on step <N> → <N> files implemented
+```

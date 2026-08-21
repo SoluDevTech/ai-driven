@@ -32,31 +32,41 @@ The wrapped feature-implementation-agents skill writes a trace event to `<LOOP_D
 - Frontend / React App → `react-hexagonal` agent (skills: `hexagonal-react-patterns`, `async-react-patterns`, `vercel-react-best-practices`, `performance-audit`). Use OpenDesign MCP and respect the Open Design maquette and the `<app-name>` design system.
 - The orchestrator does NOT write code — it delegates to agents and loads skills for tooling steps.
 
-## Spec file forwarding (mandatory)
+## Artifact forwarding (mandatory)
 
-The product-owner agent persists its Requirements Document to `<LOOP_DIR>/specs/<slug>.md` and prints `LOOP_DIR: <absolute-path>` + `SPEC_FILE: <absolute-path>` pointer lines. You MUST consume this spec and ensure the wrapped feature-implementation-agents skill passes its PATH to every delegated agent (not the content).
+The wrapped feature-implementation-agents skill implements systematic artifact forwarding. Every stage produces an artifact, every artifact has a pointer line, and the orchestrator assembles a CONTEXT block from all available pointers and includes it in every agent's task prompt. Agents read the files in full — never paste content.
 
-1. **Detect the spec source** — check if `$ARGUMENTS` (or the user's input) contains a `LOOP_DIR: <absolute-path>` or `SPEC_FILE: <absolute-path>` pointer line, or a file path matching `~/.config/opencode/loops/loop-*/specs/*.md`. Also look for these lines in the conversation history. Extract `LOOP_DIR` from `LOOP_DIR:` directly, or from `SPEC_FILE:` by stripping `/specs/<slug>.md`.
-2. **Store the path only** — if found, store the path. Do NOT read the content and do NOT copy it into task prompts. The wrapped feature-implementation-agents skill passes the path to agents; agents read the file themselves with `read`.
-3. **State the spec mode** before the loop starts:
-   - `SPEC_MODE: file — <path>` (spec file path found — pass the path to agents)
-   - `SPEC_MODE: conversation-fallback` (no spec file — create `<LOOP_DIR>` yourself if not already created, pass conversation context in the task prompt)
-4. **Path forwarding is non-negotiable** — the wrapped feature-implementation-agents skill MUST include `SPEC_FILE: <path>` plus a `read` instruction in every `task` delegation prompt (steps 1, 2, 4, 10). Agents do NOT see the conversation. The agent reads the spec file itself — never paste the content, never summarize it. A summarized or pasted-but-truncated spec is an invalid delegation — redo it with the path-only instruction.
-5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found, fall back to conversation context in the task prompt. State explicitly that you are in fallback mode. A summary is acceptable ONLY in fallback mode.
+### Artifact registry
 
-## Bug report forwarding (mandatory)
+| Artifact | Pointer line | Produced at | Persisted to | Forwarded to |
+|---|---|---|---|---|
+| Spec | `SPEC_FILE: <path>` | product-owner | `<LOOP_DIR>/specs/<slug>.md` | Steps 1, 2, 4, 10 |
+| Test files | `TEST_FILES: <paths>` | step 1 (test-writer) | in repo — agent returns paths | Steps 4, 10 (NOT step 2) |
+| Impl files | `IMPL_FILES: <paths>` | step 2 (impl) | in repo — agent returns paths | Steps 4, 10 |
+| Code review | `REVIEW: <path>` | step 4 (code-reviewer) | `<LOOP_DIR>/code-reviews/<slug>.md` | Step 2 (on loop-back), step 10 |
+| Bug report | `BUG_REPORT: <path>` | step 10 (tester-qa) | `<LOOP_DIR>/bug-reports/<slug>.md` | Step 2 (on loop-back), step 4 (on re-review) |
 
-The `tester-qa` agent persists confirmed bugs to `<LOOP_DIR>/bug-reports/<slug>.md` (same per-loop directory under `~/.config/opencode/loops/loop-<timestamp>/` as the spec and the loop trace) and ends its returned message with a `BUG_REPORT: <path|none>` pointer line (absolute path) — mirroring the `SPEC_FILE: <path>` convention. You MUST consume this pointer and forward the **path** (never the content) to the implementation agent on every QA-failed loop-back.
+### Per-stage forwarding matrix
 
-1. **Grep the pointer** from the tester-qa agent's returned message: `BUG_REPORT: <path|none>`.
-2. **`BUG_REPORT: none`** → QA gate passed. Proceed to the next step (documentation).
-3. **`BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md`** → QA gate failed. When you re-delegate to the implementation agent (step 2) via `task` with `task_id` to resume the session, you MUST include a bug-report pointer block in the task prompt alongside the `SPEC_FILE: <path>` block:
-   ```
-   BUG_REPORT: <path>
-   Use the `read` tool to read this bug report IN FULL before doing anything else. Do NOT skip this step. Do NOT work from a summary — read the full file. Fix every confirmed bug listed in the report, ordered by descending severity (Critical first). Each ticket has Steps to reproduce, Expected behavior, Observed behavior, Evidence, and a Root cause hypothesis — use them to locate and fix the defect.
-   ```
-4. **Path-only is non-negotiable** — agents do NOT see the conversation. The agent reads the bug report file itself — never paste the content, never summarize it. A summarized or pasted-but-truncated bug report is an invalid delegation — redo it with the path-only instruction.
-5. **Loop until green** — re-run steps 3-10 after each fix round. Only when the tester-qa agent returns `BUG_REPORT: none` is the QA gate considered passed.
+| Step | Agent | Gets in CONTEXT block |
+|---|---|---|
+| 1 (TDD) | test-writer | `SPEC_FILE` |
+| 2 (Impl) | impl agent | `SPEC_FILE` + (on loop-back: `REVIEW` + `BUG_REPORT`) — **no TEST_FILES** |
+| 4 (Review) | code-reviewer | `SPEC_FILE` + `TEST_FILES` + `IMPL_FILES` + (on re-review: prev `REVIEW` + `BUG_REPORT`) |
+| 10 (QA) | tester-qa | `SPEC_FILE` + `TEST_FILES` + `IMPL_FILES` + `REVIEW` + (on loop-back: prev `BUG_REPORT`) |
+
+### Orchestrator duties
+
+1. **Detect `LOOP_DIR`** — from `LOOP_DIR:` or `SPEC_FILE:` pointer line (strip `/specs/<slug>.md`). Fallback: create the loop directory yourself.
+2. **Collect pointers after each agent returns** — grep `TEST_FILES:`, `IMPL_FILES:`, `REVIEW:`, `BUG_REPORT:` from the agent's returned message and store them.
+3. **Assemble the CONTEXT block** for the next `task` call — include only the artifact lines relevant to that step per the forwarding matrix. Drop empty/`none` pointers.
+4. **Path-only is non-negotiable** — never paste file contents into task prompts. Agents read files themselves with the `read` tool. A summarized or pasted-but-truncated file is an invalid delegation — redo it with the path-only instruction.
+
+### Loop-back rules
+
+- **Code review failed** (critical > 0 or score < 8) → loop back to step 2. Forward `SPEC_FILE` + `REVIEW` to the impl agent so it reads the review and fixes every critical issue.
+- **QA failed** (`BUG_REPORT: <path>`) → loop back to step 2. Forward `SPEC_FILE` + `REVIEW` + `BUG_REPORT` to the impl agent. Loop until `BUG_REPORT: none`.
+- **On re-review** (step 4 after a fix) → forward the previous `REVIEW` + `BUG_REPORT` (if QA also failed) so the reviewer can verify fixes against the original findings.
 
 ## Skill + agent loading is mandatory at every step
 
@@ -80,13 +90,13 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 ## QA gate (do not skip)
 
 - QA is a first-class step (step 10). The `tester-qa` agent MUST add **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough.
-- The `tester-qa` agent MUST persist confirmed bugs to `<LOOP_DIR>/bug-reports/<slug>.md` and end its returned message with a `BUG_REPORT: <path|none>` pointer (absolute path). `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to the implementation agent (see "Bug report forwarding" above).
+- The `tester-qa` agent MUST persist confirmed bugs to `<LOOP_DIR>/bug-reports/<slug>.md` and end its returned message with a `BUG_REPORT: <path|none>` pointer (absolute path). `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to the implementation agent with `SPEC_FILE` + `REVIEW` + `BUG_REPORT` in the CONTEXT block (see "Artifact forwarding" above).
 - **NEVER skip e2e claiming the workspace does not exist.** Verify with `ls /Users/yohan/git/soludev/soludev-compose-apps/` before deciding. If the app subfolder exists (e.g. `soludev-compose-apps/ubby/e2e/`), the agent MUST write and run e2e there. Only if the app truly has no e2e folder after `ls` may it fall back to unit/integration tests — and state so with the `ls` output.
 - Restart the impacted apps containers before QA — the `tester-qa` agent does this.
 
 ## Code review gate
 
-- The `code-reviewer-<lang>` agent MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to the implementation agent (reload via `task` with `task_id` to resume session) if any critical issue remains or the score is below 8.
+- The `code-reviewer-<lang>` agent MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. It MUST persist the full review to `<LOOP_DIR>/code-reviews/<slug>.md` and return a `REVIEW: <path>` pointer. Loop back to the implementation agent (reload via `task` with `task_id` to resume session) with `SPEC_FILE` + `REVIEW` in the CONTEXT block if any critical issue remains or the score is below 8.
 
 ## Loop
 
