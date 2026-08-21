@@ -123,22 +123,26 @@ After gathering information, produce a **Requirements Document**:
 
 ## Spec Persistence (mandatory)
 
-After producing the Requirements Document, you MUST persist it to a file so that the implementation loop can read it and forward the full spec to every delegated agent. Follow these steps in order:
+After producing the Requirements Document, you MUST persist it to a file so that the implementation loop can read it and forward the full spec to every delegated agent. The spec lives in a **per-loop directory** under the global opencode config, alongside the loop trace and bug report — keeping every loop artifact in one place. Follow these steps in order:
 
 1. **Ask the user for a slug** — request a short kebab-case slug for this feature (e.g. `feat-auth`, `fix-login-bug`, `add-user-export`). Max 30 chars, lowercase, hyphen-separated only.
-2. **Create the directory** if it does not exist:
+2. **Generate the loop directory** — create a per-loop directory under the global opencode config using a timestamp:
    ```bash
-   mkdir -p .opencode/specs/
+   loop_ts="$(date +%Y%m%d-%H%M%S)"
+   loop_dir="${HOME}/.config/opencode/loops/loop-${loop_ts}"
+   mkdir -p "${loop_dir}/specs"
    ```
-3. **Write the full Requirements Document** to `.opencode/specs/<slug>.md` using the `write` tool. The file MUST contain the complete Requirements Document in markdown — not a summary, not an excerpt. Include every section: Problem Statement, Proposed Solution, User Stories, Functional Requirements, Non-Functional Requirements, Acceptance Criteria, Error Cases, Edge Cases, Out of Scope, Open Questions, Technical Notes.
-4. **Print a clear pointer line** at the end of your output so the orchestrator can locate the file:
+   The directory name (`loop-<timestamp>`) becomes the `loop_id` the orchestrator will derive. Print the `loop_dir` value so you can reference it below.
+3. **Write the full Requirements Document** to `${loop_dir}/specs/<slug>.md` using the `write` tool. The file MUST contain the complete Requirements Document in markdown — not a summary, not an excerpt. Include every section: Problem Statement, Proposed Solution, User Stories, Functional Requirements, Non-Functional Requirements, Acceptance Criteria, Error Cases, Edge Cases, Out of Scope, Open Questions, Technical Notes.
+4. **Print two pointer lines** at the end of your output so the orchestrator can locate the loop directory and the spec file (absolute paths — agents run with `cwd=repo` and must `read` them directly):
    ```
-   SPEC_FILE: .opencode/specs/<slug>.md
+   LOOP_DIR: <absolute-loop_dir-path>
+   SPEC_FILE: <absolute-loop_dir-path>/specs/<slug>.md
    ```
 5. **Tell the user** how to start implementation:
-   > "To start implementation, run: `/loop-implementation-review-agents .opencode/specs/<slug>.md`"
+   > "To start implementation, run: `/loop-implementation-review-agents <absolute-SPEC_FILE-path>`"
 
-The spec file lives in the same `.opencode/` directory as the implementation loop trace file (`.opencode/loop-trace.md`). This keeps all loop artifacts in one place.
+The spec file lives in the same per-loop directory (`~/.config/opencode/loops/loop-<timestamp>/`) as the implementation loop trace file (`loop-trace.md`) and the bug report (`bug-reports/<slug>.md`). This keeps all loop artifacts in one place, persisted in the global config rather than scattered in each repo.
 
 ## Behavior Guidelines
 

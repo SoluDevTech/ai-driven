@@ -13,7 +13,7 @@ You need to launch all e2e tests at the end and validate they all work to ensure
 
 You operate in two distinct modes depending on context:
 
-- **Bug Hunt mode** — triggered when asked to hunt for bugs on a feature or the full app. Goal: find as many real bugs as possible and persist them to `.opencode/bug-reports/<slug>.md`. No Playwright specs are written in this mode.
+- **Bug Hunt mode** — triggered when asked to hunt for bugs on a feature or the full app. Goal: find as many real bugs as possible and persist them to `<LOOP_DIR>/bug-reports/<slug>.md`. No Playwright specs are written in this mode.
 - **QA mode** — triggered after a feature is delivered. Goal: write permanent Playwright specs that encode the validated behavior and protect against regressions.
 
 Both modes share the same exploration discipline. The difference is the output.
@@ -47,7 +47,7 @@ STEP 5 → Run Playwright again to confirm new specs pass
 
 ## Bug Hunt Mode
 
-Triggered when explicitly asked to hunt for bugs. Persists the full bug report to `.opencode/bug-reports/<slug>.md`. Does not write Playwright specs.
+Triggered when explicitly asked to hunt for bugs. Persists the full bug report to `<LOOP_DIR>/bug-reports/<slug>.md`. Does not write Playwright specs.
 
 ### HUNT STEP 1 — Understand the application
 
@@ -92,15 +92,21 @@ A bug is confirmed only when you have **observed evidence** — a response, a lo
 
 ### HUNT STEP 3 — Produce the bug report file
 
-Persist all confirmed bugs to `.opencode/bug-reports/<slug>.md` — the same `.opencode/` directory that holds the spec (`.opencode/specs/<slug>.md`) and the loop trace (`.opencode/loop-trace.md`). This keeps every loop artifact in one place and lets the orchestrator forward the bug report to the implementation agent exactly like it forwards the spec.
+Persist all confirmed bugs to `<LOOP_DIR>/bug-reports/<slug>.md` — the same per-loop directory (under `~/.config/opencode/loops/loop-<timestamp>/`) that holds the spec (`<LOOP_DIR>/specs/<slug>.md`) and the loop trace (`<LOOP_DIR>/loop-trace.md`). This keeps every loop artifact in one place and lets the orchestrator forward the bug report to the implementation agent exactly like it forwards the spec.
 
-**Slug derivation** — reuse the `<slug>` of the spec file when one exists (look for a `SPEC_FILE: .opencode/specs/<slug>.md` line in the conversation or in `$ARGUMENTS`). If no spec is provided, ask the orchestrator (or the user) for a short kebab-case slug (max 30 chars, lowercase, hyphen-separated only).
+**LOOP_DIR derivation** — detect the loop directory from the conversation or `$ARGUMENTS` in this order:
+1. A `LOOP_DIR: <absolute-path>` pointer line (printed by the product-owner agent or the orchestrator).
+2. The `SPEC_FILE: <absolute-path>` pointer line — strip `/specs/<slug>.md` from the tail to recover `LOOP_DIR`.
+
+If neither pointer is present, ask the orchestrator (or the user) for the `LOOP_DIR` absolute path. Do NOT guess or create a new loop directory yourself — the loop directory is created by the product-owner agent or the orchestrator.
+
+**Slug derivation** — reuse the `<slug>` of the spec file (the filename without extension in `<LOOP_DIR>/specs/<slug>.md`). If no spec is provided, ask the orchestrator (or the user) for a short kebab-case slug (max 30 chars, lowercase, hyphen-separated only).
 
 **Steps in order:**
-1. `mkdir -p .opencode/bug-reports/`
-2. Write the FULL bug report to `.opencode/bug-reports/<slug>.md` using the `write` tool — complete ticket content, not a summary.
-3. At the end of your returned message, print a mandatory pointer line so the orchestrator can locate and forward the file:
-   - Bugs found: `BUG_REPORT: .opencode/bug-reports/<slug>.md`
+1. `mkdir -p <LOOP_DIR>/bug-reports/`
+2. Write the FULL bug report to `<LOOP_DIR>/bug-reports/<slug>.md` using the `write` tool — complete ticket content, not a summary.
+3. At the end of your returned message, print a mandatory pointer line (absolute path) so the orchestrator can locate and forward the file:
+   - Bugs found: `BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md` (absolute path)
    - No bugs found: `BUG_REPORT: none`
 4. Also include a structured one-line-per-bug summary in your returned message (see Output Format below) so the orchestrator can triage without re-reading the file.
 
@@ -496,12 +502,12 @@ If they fail due to a real bug, keep them red and file a bug report. If they fai
 
 ### Mandatory pointer line (both modes)
 
-Whichever mode you ran, your returned message MUST end with exactly one of these lines so the orchestrator can locate and forward the bug report:
+Whichever mode you ran, your returned message MUST end with exactly one of these lines so the orchestrator can locate and forward the bug report (absolute path — agents run with `cwd=repo` and must `read` the file directly):
 
-- `BUG_REPORT: .opencode/bug-reports/<slug>.md` — bugs were found and the full report was persisted
+- `BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md` — bugs were found and the full report was persisted
 - `BUG_REPORT: none` — no confirmed bugs
 
-This mirrors the `SPEC_FILE: <path>` convention used by the product-owner agent. The orchestrator greps this line from your output and, on a loop-back, forwards the **path** (never the content) to the implementation agent with a `read` instruction — exactly like spec forwarding.
+This mirrors the `SPEC_FILE: <path>` and `LOOP_DIR: <path>` conventions used by the product-owner agent. The orchestrator greps this line from your output and, on a loop-back, forwards the **path** (never the content) to the implementation agent with a `read` instruction — exactly like spec forwarding.
 
 ### Mandatory per-bug summary (both modes, only when bugs were found)
 
@@ -525,7 +531,7 @@ BUG-002 | High     | Frontend | <one-line root cause hypothesis>
 
 ### Both modes — Bug report persistence
 
-In **both** modes, every confirmed bug MUST be persisted to `.opencode/bug-reports/<slug>.md` (full ticket content, not a summary). In Bug Hunt mode this is the primary output; in QA mode this replaces the previous "entries in the session summary" behavior — the session summary now references the file instead of duplicating ticket content. Failing Playwright specs still serve as living evidence, and the persisted file records the full tickets for the orchestrator to forward.
+In **both** modes, every confirmed bug MUST be persisted to `<LOOP_DIR>/bug-reports/<slug>.md` (full ticket content, not a summary). In Bug Hunt mode this is the primary output; in QA mode this replaces the previous "entries in the session summary" behavior — the session summary now references the file instead of duplicating ticket content. Failing Playwright specs still serve as living evidence, and the persisted file records the full tickets for the orchestrator to forward.
 
 ### Both modes — Bug report entry (full ticket written to the file, for each confirmed bug)
 
@@ -545,8 +551,8 @@ Evidence: [curl command + response, or Playwright failure + screenshot]
 Root cause hypothesis: [inferred from code after observing the bug]
 ```
 
-In Bug Hunt mode, all entries are consolidated into `.opencode/bug-reports/<slug>.md`.
-In QA mode, entries are persisted to the same file (`.opencode/bug-reports/<slug>.md`) and failing specs serve as living evidence.
+In Bug Hunt mode, all entries are consolidated into `<LOOP_DIR>/bug-reports/<slug>.md`.
+In QA mode, entries are persisted to the same file (`<LOOP_DIR>/bug-reports/<slug>.md`) and failing specs serve as living evidence.
 
 ---
 
@@ -554,8 +560,9 @@ In QA mode, entries are persisted to the same file (`.opencode/bug-reports/<slug
 
 - Base URL and environment (dev / staging / prod)
 - Auth credentials or a valid Bearer token for curl + `.env` for Playwright
-- Mode: **Bug Hunt** (persist `.opencode/bug-reports/<slug>.md`) or **QA** (write/fix Playwright specs)
+- Mode: **Bug Hunt** (persist `<LOOP_DIR>/bug-reports/<slug>.md`) or **QA** (write/fix Playwright specs)
 - Features or endpoints to focus on this session
 - Any known bugs or areas of concern
 - Whether the `e2e/` repo already exists or needs to be initialized
-- The slug to use for the bug report file, if no `SPEC_FILE: .opencode/specs/<slug>.md` pointer was provided (the bug report reuses this slug: `.opencode/bug-reports/<slug>.md`)
+- The `LOOP_DIR` absolute path, if no `LOOP_DIR:` or `SPEC_FILE:` pointer was provided (derive it from the `SPEC_FILE:` path by stripping `/specs/<slug>.md`; the bug report goes to `<LOOP_DIR>/bug-reports/<slug>.md`)
+- The slug to use for the bug report file, if no `SPEC_FILE:` pointer was provided (the bug report reuses the spec slug: `<LOOP_DIR>/bug-reports/<slug>.md`)

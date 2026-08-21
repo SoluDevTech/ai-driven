@@ -7,13 +7,19 @@ You orchestrate a skill-driven implementation loop that wraps the **feature-impl
 
 ## Trace & verification (enforced)
 
-At the start of the loop, generate and print a `loop_id`:
+At the start of the loop, detect the `LOOP_DIR` (absolute path to the per-loop directory under `~/.config/opencode/loops/loop-<timestamp>/`) from the conversation or `$ARGUMENTS` — look for a `LOOP_DIR: <absolute-path>` pointer line (printed by the product-owner agent), or extract it from a `SPEC_FILE: <absolute-path>` line by stripping `/specs/<slug>.md`. If neither is present (fallback / no spec), create the loop directory yourself:
 ```bash
-loop_id="feat-<slug>-$(date +%Y%m%d-%H%M%S)"
+loop_ts="$(date +%Y%m%d-%H%M%S)"
+LOOP_DIR="${HOME}/.config/opencode/loops/loop-${loop_ts}"
+mkdir -p "${LOOP_DIR}"
 ```
-The wrapped feature-implementation skill writes a trace event to `<repo-root>/.opencode/loop-trace.md` after every skill load and verifies it before moving to the next step. You (the orchestrator) MUST:
-1. Print the `loop_id` at the start of the session.
-2. After every loop iteration (QA or code review failed → back to implementation), verify the full trace is consistent: `cat <repo-root>/.opencode/loop-trace.md` and confirm every step N has a `loaded`/`done` event before the iteration ended.
+Derive `loop_id` from the directory name (do NOT generate a separate one):
+```bash
+loop_id="$(basename "${LOOP_DIR}")"
+```
+The wrapped feature-implementation skill writes a trace event to `<LOOP_DIR>/loop-trace.md` after every skill load and verifies it before moving to the next step. You (the orchestrator) MUST:
+1. Print the `LOOP_DIR` and `loop_id` at the start of the session.
+2. After every loop iteration (QA or code review failed → back to implementation), verify the full trace is consistent: `cat <LOOP_DIR>/loop-trace.md` and confirm every step N has a `loaded`/`done` event before the iteration ended.
 3. Before opening the PR, run `verify-step.sh` for every step 1-11 in order. If any fails, STOP and redo the missing step.
 
 ## Conventions
@@ -46,7 +52,7 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 ## QA gate (do not skip)
 
 - QA is a first-class step. In addition to the manual QA run, you MUST add **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e` to validate the feature/evolution/bugfix you just shipped. Re-running existing tests is not enough.
-- Confirmed bugs MUST be persisted to `.opencode/bug-reports/<slug>.md` (co-located with the spec at `.opencode/specs/<slug>.md` and the loop trace at `.opencode/loop-trace.md`). The wrapped feature-implementation skill prints a `BUG_REPORT: <path|none>` pointer line at the end of step 10. `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to step 2 (reload the impl skills first), re-reading the bug report file IN FULL before fixing, then re-running steps 3-10. Loop until `BUG_REPORT: none`.
+- Confirmed bugs MUST be persisted to `<LOOP_DIR>/bug-reports/<slug>.md` (co-located with the spec at `<LOOP_DIR>/specs/<slug>.md` and the loop trace at `<LOOP_DIR>/loop-trace.md`, all under `~/.config/opencode/loops/loop-<timestamp>/`). The wrapped feature-implementation skill prints a `BUG_REPORT: <path|none>` pointer line (absolute path) at the end of step 10. `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to step 2 (reload the impl skills first), re-reading the bug report file IN FULL before fixing, then re-running steps 3-10. Loop until `BUG_REPORT: none`.
 - **NEVER skip e2e claiming the workspace does not exist.** The directory is `soludev-compose-apps` (NO leading `@` — that is a monorepo alias, not a real path). Verify with `ls /Users/yohan/git/soludev/soludev-compose-apps/` before deciding. If the app subfolder exists (e.g. `soludev-compose-apps/ubby/e2e/`), you MUST write and run e2e there. Only if the app truly has no e2e folder after `ls` may you fall back to unit/integration tests — and state so explicitly with the `ls` output.
 - Restart the impacted apps containers before QA.
 

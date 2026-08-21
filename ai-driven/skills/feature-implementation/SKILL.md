@@ -9,22 +9,31 @@ You are a senior software engineer with expertise in clean architecture, TDD, an
 
 Read and apply `/Users/yohan/.config/opencode/skills/_shared/TRACE_PROTOCOL.md` in full. Summary:
 
-1. At the start of the loop, generate a `loop_id`:
+1. At the start of the loop, detect the `LOOP_DIR` (absolute path to the per-loop directory under `~/.config/opencode/loops/loop-<timestamp>/`) from the conversation or `$ARGUMENTS`:
+   - Look for a `LOOP_DIR: <absolute-path>` pointer line (printed by the product-owner agent).
+   - Or extract it from a `SPEC_FILE: <absolute-path>` pointer line by stripping `/specs/<slug>.md` from the tail.
+   - **Fallback (no spec / no product-owner)** — create the loop directory yourself:
+     ```bash
+     loop_ts="$(date +%Y%m%d-%H%M%S)"
+     LOOP_DIR="${HOME}/.config/opencode/loops/loop-${loop_ts}"
+     mkdir -p "${LOOP_DIR}"
+     ```
+   Derive `loop_id` from the directory name (do NOT generate a separate one):
    ```bash
-   loop_id="feat-<slug>-$(date +%Y%m%d-%H%M%S)"
+   loop_id="$(basename "${LOOP_DIR}")"
    ```
-   Print it. Reuse it for every trace call.
+   Print both `LOOP_DIR` and `loop_id` at the start of the session. Reuse them for every trace/verify call.
 
 2. **After every `skill` call** (steps 1, 2, 4, 5, 6, 8, 9, 10, 11, 12): append a trace event:
    ```bash
    bash /Users/yohan/.config/opencode/skills/_shared/trace.sh \
-     "<repo-root>" "<loop_id>" "<step>" "skill" "<skill_name>" "loaded" "<detail>"
+     "<LOOP_DIR>" "<loop_id>" "<step>" "skill" "<skill_name>" "loaded" "<detail>"
    ```
 
 3. **Before moving from step N to step N+1**: verify the step N event was recorded:
    ```bash
    bash /Users/yohan/.config/opencode/skills/_shared/verify-step.sh \
-     "<repo-root>" "<loop_id>" "<step>" "skill" "<skill_name>"
+     "<LOOP_DIR>" "<loop_id>" "<step>" "skill" "<skill_name>"
    ```
    If exit code ≠ 0: STOP, print the trace, redo step N. Do NOT proceed.
 
@@ -57,13 +66,13 @@ If ambiguous or mixed, ask the user which stack to target. Record the detected s
 
 ## Spec file handling (mandatory, before step 1)
 
-The product-owner agent persists its Requirements Document to `.opencode/specs/<slug>.md` and prints a `SPEC_FILE: <path>` pointer line. You MUST consume this spec and use it as the requirements context for every step.
+The product-owner agent persists its Requirements Document to `<LOOP_DIR>/specs/<slug>.md` and prints `LOOP_DIR: <absolute-path>` + `SPEC_FILE: <absolute-path>` pointer lines. You MUST consume this spec and use it as the requirements context for every step.
 
-1. **Detect the spec source** — check if `$ARGUMENTS` (or the user's input) contains a file path matching `.opencode/specs/*.md`. Also look for a `SPEC_FILE: <path>` line in the conversation history.
+1. **Detect the spec source** — check if `$ARGUMENTS` (or the user's input) contains a `LOOP_DIR: <absolute-path>` or `SPEC_FILE: <absolute-path>` pointer line, or a file path matching `~/.config/opencode/loops/loop-*/specs/*.md`. Also look for these lines in the conversation history. Extract `LOOP_DIR` from `LOOP_DIR:` directly, or from `SPEC_FILE:` by stripping `/specs/<slug>.md`.
 2. **Read the spec file** — if found, call the `read` tool to load the FULL file content. Store it as the spec context. Do NOT summarize it.
 3. **State the spec mode** before starting step 1:
    - `SPEC_MODE: file — <path>` (spec file found and read)
-   - `SPEC_MODE: conversation-fallback` (no spec file, using conversation history)
+   - `SPEC_MODE: conversation-fallback` (no spec file, create `<LOOP_DIR>` yourself if not already created, using conversation history)
 4. **Use the full spec at every step** — the spec content guides TDD (test cases based on acceptance criteria + edge cases), implementation (functional requirements + technical notes), and QA (validate all acceptance criteria end-to-end). Refer back to the full spec content at each step rather than relying on memory.
 5. **Fallback** — if no spec file path is provided and no `SPEC_FILE` line is found, fall back to whatever requirements context is available in the conversation history. State explicitly that you are in fallback mode.
 
@@ -113,7 +122,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `test-writer-<lang>` (and `hexagonal-<lang>`, `async-<lang>` per the skill map).
 2. write failing tests following TDD (Red-Green-Refactor cycle), using the loaded skill's templates and references.
 3. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 1`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "1" "skill" "test-writer-<lang>" "loaded" "<N> test files written"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "1" "skill" "test-writer-<lang>" "loaded" "<N> test files written"`.
 5. before step 2: `bash .../verify-step.sh ... "1" "skill" "test-writer-<lang>"` — if fail, redo step 1.
 
 ### 2. Implementation
@@ -121,12 +130,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `hexagonal-<lang>` + `async-<lang>` + `performance-audit` (per the skill map).
 2. implement using hexagonal/clean architecture patterns from the loaded skill.
 3. print `SKILL_CONFIRM: hexagonal-<lang> loaded and applied on step 2`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "2" "skill" "hexagonal-<lang>" "loaded" "<N> files modified"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "2" "skill" "hexagonal-<lang>" "loaded" "<N> files modified"`.
 5. before step 3: `verify-step.sh ... "2" "skill" "hexagonal-<lang>"` — if fail, redo step 2.
 
 ### 3. Full Test Suite
 1. Run the FULL test suite: `uv run pytest tests/ -x -q` (Python), `npx vitest run` (TypeScript). All tests must pass with 0 failures. If a failure appears, loop back to step 2 (reload the impl skills first).
-2. `bash .../trace.sh "<repo-root>" "<loop_id>" "3" "bash" "test-suite" "done" "exit=<code>, pass=<N>"`.
+2. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "3" "bash" "test-suite" "done" "exit=<code>, pass=<N>"`.
 3. before step 4: `verify-step.sh ... "3" "bash" "test-suite"` — if fail, redo step 3.
 
 ### 4. Code Review
@@ -134,7 +143,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `code-reviewer`, then load the stack-specific skills: `hexagonal-<lang>-patterns`, `async-<lang>-patterns`, `performance-audit`, `test-writer-<lang>` (per the skill map). This enriches the review with stack-specific knowledge — architecture compliance, async correctness, performance patterns, and test quality conventions.
 2. review the implementation. The skill outputs an overall score on 10. Minimum required: **8/10**. If below 8, loop back to step 2 (reload impl skills) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
 3. print `SKILL_CONFIRM: code-reviewer loaded and applied on step 4`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "4" "skill" "code-reviewer" "loaded" "score=<S>, critical=<N>"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "4" "skill" "code-reviewer" "loaded" "score=<S>, critical=<N>"`.
 5. before step 5: `verify-step.sh ... "4" "skill" "code-reviewer"` — if fail, redo step 4.
 
 ### 5. Code Simplifier
@@ -142,7 +151,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `code-simplifier`.
 2. refactor to reduce complexity while maintaining functionality. Run tests again after simplification (step 3).
 3. print `SKILL_CONFIRM: code-simplifier loaded and applied on step 5`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "5" "skill" "code-simplifier" "loaded" "<detail>"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "5" "skill" "code-simplifier" "loaded" "<detail>"`.
 5. before step 6: `verify-step.sh ... "5" "skill" "code-simplifier"` — if fail, redo step 5.
 
 ### 6. Linter
@@ -150,12 +159,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `linter`.
 2. run ruff (Python) and/or eslint+prettier (TypeScript) per the loaded skill. Fix all linting issues before proceeding.
 3. print `SKILL_CONFIRM: linter loaded and applied on step 6`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "6" "skill" "linter" "loaded" "<N> issues fixed"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "6" "skill" "linter" "loaded" "<N> issues fixed"`.
 5. before step 7: `verify-step.sh ... "6" "skill" "linter"` — if fail, redo step 6.
 
 ### 7. Unit Tests
 1. Run all unit tests again via Bash to ensure no regressions.
-2. `bash .../trace.sh "<repo-root>" "<loop_id>" "7" "bash" "unit-tests" "done" "exit=<code>, pass=<N>"`.
+2. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "7" "bash" "unit-tests" "done" "exit=<code>, pass=<N>"`.
 3. before step 8: `verify-step.sh ... "7" "bash" "unit-tests"` — if fail, redo step 7.
 
 ### 8. SonarQube
@@ -163,7 +172,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `sonarfix`.
 2. run SonarQube analysis. Verify 0 new issues on the branch. If issues, loop back to step 2 (reload impl skills) to fix, then re-run.
 3. print `SKILL_CONFIRM: sonarfix loaded and applied on step 8`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "8" "skill" "sonarfix" "loaded" "<N> new issues"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "8" "skill" "sonarfix" "loaded" "<N> new issues"`.
 5. before step 9: `verify-step.sh ... "8" "skill" "sonarfix"` — if fail, redo step 8.
 
 ### 9. Trivy
@@ -171,19 +180,19 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `trivyfix`.
 2. run Trivy vulnerability scan. Verify 0 new vulnerabilities. If issues, loop back to step 2 to fix, then re-run.
 3. print `SKILL_CONFIRM: trivyfix loaded and applied on step 9`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "9" "skill" "trivyfix" "loaded" "<N> vulns"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "9" "skill" "trivyfix" "loaded" "<N> vulns"`.
 5. before step 10: `verify-step.sh ... "9" "skill" "trivyfix"` — if fail, redo step 9.
 
 ### 10. Tester-QA
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `test-writer-<lang>` (for e2e spec conventions).
 2. rebuild Docker images, restart stack, perform manual testing. Add NEW e2e/QA tests validating the shipped feature. Re-running existing tests is not enough. Verify all acceptance criteria are met end-to-end. Try edge cases automated tests missed.
-3. **Bug report persistence (mandatory)** — if you find confirmed bugs, persist the FULL bug report to `.opencode/bug-reports/<slug>.md` (reuse the `<slug>` from the `SPEC_FILE` path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p .opencode/bug-reports/` first, then `write` the complete tickets to that file — not a summary. Use the ticket format from the `tester-qa` skill (Severity, Feature, Layer, Observed/Expected behavior, Steps to reproduce, Evidence, Root cause hypothesis). This keeps the bug report co-located with the spec (`.opencode/specs/<slug>.md`) and the loop trace (`.opencode/loop-trace.md`) and lets you re-read it on a loop-back.
+3. **Bug report persistence (mandatory)** — if you find confirmed bugs, persist the FULL bug report to `<LOOP_DIR>/bug-reports/<slug>.md` (reuse the `<slug>` from the `SPEC_FILE` path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p <LOOP_DIR>/bug-reports/` first, then `write` the complete tickets to that file — not a summary. Use the ticket format from the `tester-qa` skill (Severity, Feature, Layer, Observed/Expected behavior, Steps to reproduce, Evidence, Root cause hypothesis). This keeps the bug report co-located with the spec (`<LOOP_DIR>/specs/<slug>.md`) and the loop trace (`<LOOP_DIR>/loop-trace.md`) and lets you re-read it on a loop-back.
 4. Print one line per confirmed bug right before the pointer line: `BUG-XXX | Severity | Layer | <one-line root cause hypothesis>`.
-5. Print a mandatory pointer line so the loop is self-describing: `BUG_REPORT: .opencode/bug-reports/<slug>.md` (bugs found) or `BUG_REPORT: none` (no bugs).
+5. Print a mandatory pointer line so the loop is self-describing: `BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md` (absolute path, bugs found) or `BUG_REPORT: none` (no bugs).
 6. If bugs found: iterate back to step 2 (reload the impl skills first), re-read the bug report file IN FULL (`read` tool) before fixing, then re-run steps 3-10. Loop until `BUG_REPORT: none`.
 7. print `SKILL_CONFIRM: test-writer-<lang> loaded and applied on step 10`.
-8. `bash .../trace.sh "<repo-root>" "<loop_id>" "10" "skill" "test-writer-<lang>" "loaded" "<N> e2e specs written, <N> bugs, BUG_REPORT: <path|none>"`.
+8. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "10" "skill" "test-writer-<lang>" "loaded" "<N> e2e specs written, <N> bugs, BUG_REPORT: <path|none>"`.
 9. before step 11: `verify-step.sh ... "10" "skill" "test-writer-<lang>"` — if fail, redo step 10.
 
 ### 11. Documentation
@@ -191,7 +200,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `documentation-writer`.
 2. update or create documentation when public APIs or significant behavior changes. Skip only if internal refactors with no user-facing impact (trace as `status=skipped-by-user`).
 3. print `SKILL_CONFIRM: documentation-writer loaded and applied on step 11`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "11" "skill" "documentation-writer" "loaded" "<detail>"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "11" "skill" "documentation-writer" "loaded" "<detail>"`.
 5. before step 12: `verify-step.sh ... "11" "skill" "documentation-writer"` — if fail, redo step 11.
 
 ### 12. PR
@@ -199,7 +208,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 1. call the `skill` tool NOW with `githubpr`.
 2. if no Jira ticket, create a conventional descriptive branch name. Open one detailed draft PR per modified repo. Commits are conventional. Do NOT merge — the user must be able to test on the local stack. Wait for CI green, then address reviewer feedback until 0 critical and score ≥ 8/10.
 3. print `SKILL_CONFIRM: githubpr loaded and applied on step 12`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "12" "skill" "githubpr" "loaded" "<PR URLs>"`.
+4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "12" "skill" "githubpr" "loaded" "<PR URLs>"`.
 5. final: `verify-step.sh ... "12" "skill" "githubpr"` — if fail, redo step 12.
 
 ## Guidelines
