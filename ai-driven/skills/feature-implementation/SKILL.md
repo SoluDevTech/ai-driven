@@ -73,7 +73,7 @@ The product-owner agent persists its Requirements Document to `.opencode/specs/<
 |------|------------------|--------------------|---------------------|
 | 1 (TDD) | `test-writer-python` + `hexagonal-python-patterns` + `async-python-patterns` | `test-writer-react` + `hexagonal-react-patterns` + `async-react-patterns` | `test-writer-nestjs` + `hexagonal-nestjs-patterns` + `async-nestjs-patterns` |
 | 2 (Impl) | `hexagonal-python-patterns` + `async-python-patterns` + `performance-audit` | `hexagonal-react-patterns` + `async-react-patterns` + `vercel-react-best-practices` + `performance-audit` | `hexagonal-nestjs-patterns` + `async-nestjs-patterns` + `performance-audit` |
-| 4 (Review) | `code-reviewer` | `code-reviewer` | `code-reviewer` |
+| 4 (Review) | `code-reviewer` + `hexagonal-python-patterns` + `async-python-patterns` + `performance-audit` + `test-writer-python` | `code-reviewer` + `hexagonal-react-patterns` + `async-react-patterns` + `performance-audit` + `test-writer-react` | `code-reviewer` + `hexagonal-nestjs-patterns` + `async-nestjs-patterns` + `performance-audit` + `test-writer-nestjs` |
 | 5 (Simplify) | `code-simplifier` | `code-simplifier` | `code-simplifier` |
 | 6 (Lint) | `linter` | `linter` | `linter` |
 | 8 (Sonar) | `sonarfix` | `sonarfix` | `sonarfix` |
@@ -131,7 +131,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 
 ### 4. Code Review
 **ACTIONS (in order):**
-1. call the `skill` tool NOW with `code-reviewer`.
+1. call the `skill` tool NOW with `code-reviewer`, then load the stack-specific skills: `hexagonal-<lang>-patterns`, `async-<lang>-patterns`, `performance-audit`, `test-writer-<lang>` (per the skill map). This enriches the review with stack-specific knowledge — architecture compliance, async correctness, performance patterns, and test quality conventions.
 2. review the implementation. The skill outputs an overall score on 10. Minimum required: **8/10**. If below 8, loop back to step 2 (reload impl skills) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
 3. print `SKILL_CONFIRM: code-reviewer loaded and applied on step 4`.
 4. `bash .../trace.sh "<repo-root>" "<loop_id>" "4" "skill" "code-reviewer" "loaded" "score=<S>, critical=<N>"`.

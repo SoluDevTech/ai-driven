@@ -32,7 +32,7 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 |------|------------------|
 | 1 (TDD) | `test-writer-<lang>` + `hexagonal-<lang>` + `async-<lang>` |
 | 2 (Impl) | `hexagonal-<lang>` + `async-<lang>` + `performance-audit` |
-| 4 (Review) | `code-reviewer` |
+| 4 (Review) | `code-reviewer` + `hexagonal-python-patterns` + `async-python-patterns` + `performance-audit` + `test-writer-python` | `code-reviewer` + `hexagonal-react-patterns` + `async-react-patterns` + `performance-audit` + `test-writer-react` | `code-reviewer` + `hexagonal-nestjs-patterns` + `async-nestjs-patterns` + `performance-audit` + `test-writer-nestjs` |
 | 5 (Simplify) | `code-simplifier` |
 | 6 (Lint) | `linter` |
 | 8 (Sonar) | `sonarfix` |
@@ -51,7 +51,7 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 
 ## Code review gate
 
-- The `code-reviewer` skill MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to implementation (reload the impl skills first) if any critical issue remains or the score is below 8.
+- The code review (step 4) loads `code-reviewer` + stack-specific skills (`hexagonal-<lang>-patterns`, `async-<lang>-patterns`, `performance-audit`, `test-writer-<lang>`) to enrich the review with architecture compliance, async correctness, performance patterns, and test quality conventions. It MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to implementation (reload the impl skills first) if any critical issue remains or the score is below 8.
 
 ## Loop
 

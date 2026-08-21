@@ -19,8 +19,8 @@ The wrapped feature-implementation-agents skill writes a trace event to `<repo-r
 ## Conventions
 
 - Respect the global AGENTS.md.
-- Role steps (requirements, TDD, implementation, QA) are delegated to agents via the `task` tool. Agents auto-load their declared skills through the `skills:` frontmatter — you remind them in every task prompt.
-- Pure-skill steps (code review, simplification, linting, sonar, trivy, documentation, PR) are loaded via the `skill` tool directly by you (the orchestrator) — they are not agents.
+- Role steps (requirements, TDD, implementation, code review, QA) are delegated to agents via the `task` tool. Agents auto-load their declared skills through the `skills:` frontmatter — you remind them in every task prompt. The `code-reviewer-<lang>` agents run on `ollama-cloud/kimi-k2.7-code`.
+- Pure-skill steps (simplification, linting, sonar, trivy, documentation, PR) are loaded via the `skill` tool directly by you (the orchestrator) — they are not agents.
 - Backend (Python/FastAPI) → `fastapi-hexagonal` agent (skills: `hexagonal-python-patterns`, `async-python-patterns`, `performance-audit`).
 - Backend (NestJS) → `nestjs-hexagonal` agent (skills: `hexagonal-nestjs-patterns`, `async-nestjs-patterns`, `performance-audit`).
 - Frontend / React App → `react-hexagonal` agent (skills: `hexagonal-react-patterns`, `async-react-patterns`, `vercel-react-best-practices`, `performance-audit`). Use OpenDesign MCP and respect the Open Design maquette and the `<app-name>` design system.
@@ -47,7 +47,7 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 | 1 (TDD) | agent | `task` → `test-writer` (auto-loads test-writer-<lang> + hexagonal + async) |
 | 2 (Impl) | agent | `task` → `fastapi-hexagonal` / `react-hexagonal` / `nestjs-hexagonal` (auto-loads architecture + async + performance) |
 | 3 (Test suite) | bash | run full test suite |
-| 4 (Review) | skill | `skill` → `code-reviewer` |
+| 4 (Review) | agent | `task` → `code-reviewer-python` / `code-reviewer-react` / `code-reviewer-nestjs` (auto-loads code-reviewer + hexagonal + async + performance-audit + test-writer skills; runs on kimi-k2.7-code) |
 | 5 (Simplify) | skill | `skill` → `code-simplifier` |
 | 6 (Lint) | skill | `skill` → `linter` |
 | 7 (Unit tests) | bash | run all unit tests |
@@ -65,7 +65,7 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 
 ## Code review gate
 
-- The `code-reviewer` skill MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to the implementation agent (reload via `task` with `task_id` to resume session) if any critical issue remains or the score is below 8.
+- The `code-reviewer-<lang>` agent MUST report **0 critical issues** and a score **≥ 8/10** before you open any PR. Loop back to the implementation agent (reload via `task` with `task_id` to resume session) if any critical issue remains or the score is below 8.
 
 ## Loop
 

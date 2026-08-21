@@ -86,7 +86,7 @@ The product-owner agent persists its Requirements Document to `.opencode/specs/<
 |------|------------------|--------------------|---------------------|
 | 1 (TDD) | `test-writer` | `test-writer` | `test-writer` |
 | 2 (Impl) | `fastapi-hexagonal` | `react-hexagonal` | `nestjs-hexagonal` |
-| 4 (Review) | `code-reviewer` skill (run yourself) | `code-reviewer` skill (run yourself) | `code-reviewer` skill (run yourself) |
+| 4 (Review) | `code-reviewer-python` | `code-reviewer-react` | `code-reviewer-nestjs` |
 | 5 (Simplify) | `code-simplifier` skill (run yourself) | `code-simplifier` skill (run yourself) | `code-simplifier` skill (run yourself) |
 | 6 (Lint) | `linter` skill (run yourself) | `linter` skill (run yourself) | `linter` skill (run yourself) |
 | 8 (Sonar) | `sonarfix` skill (run yourself) | `sonarfix` skill (run yourself) | `sonarfix` skill (run yourself) |
@@ -95,7 +95,7 @@ The product-owner agent persists its Requirements Document to `.opencode/specs/<
 | 11 (Docs) | `documentation-writer` skill (run yourself) | `documentation-writer` skill (run yourself) | `documentation-writer` skill (run yourself) |
 | 12 (PR) | `githubpr` skill (run yourself) | `githubpr` skill (run yourself) | `githubpr` skill (run yourself) |
 
-**Note:** Steps that are pure skills (code-reviewer, code-simplifier, linter, sonarfix, trivyfix, documentation-writer, githubpr) are loaded via the `skill` tool directly by you (the orchestrator) — they are not agents and cannot be delegated via `task`. Steps that are roles (TDD, implementation, QA) ARE delegated to agents. The `product-owner` agent is NOT part of the loop — the user provides the spec/requirements directly as input to the loop.
+**Note:** Steps that are pure skills (code-simplifier, linter, sonarfix, trivyfix, documentation-writer, githubpr) are loaded via the `skill` tool directly by you (the orchestrator) — they are not agents and cannot be delegated via `task`. Steps that are roles (TDD, implementation, code review, QA) ARE delegated to agents. The `code-reviewer-<lang>` agents auto-load the `code-reviewer` skill + `hexagonal-<lang>-patterns` + `async-<lang>-patterns` + `performance-audit` + `test-writer-<lang>` skills via their frontmatter — they run on `ollama-cloud/kimi-k2.7-code`. The `product-owner` agent is NOT part of the loop — the user provides the spec/requirements directly as input to the loop.
 
 ## How to delegate to an agent
 
@@ -120,7 +120,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 - [ ] 1. TDD — test-writer agent → failing tests written (Red)
 - [ ] 2. IMPLEMENTATION — hexagonal agent (backend or frontend) → feature implemented (Green)
 - [ ] 3. TEST SUITE — full test suite run, all green
-- [ ] 4. CODE REVIEW — code-reviewer skill → 0 critical + score ≥ 8/10
+- [ ] 4. CODE REVIEW — code-reviewer-<lang> agent → 0 critical + score ≥ 8/10
 - [ ] 5. CODE SIMPLIFIER — code-simplifier skill → complexity reduced
 - [ ] 6. LINTER — linter skill → 0 lint issues
 - [ ] 7. UNIT TESTS — all unit tests green
@@ -175,11 +175,13 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 
 ### 4. Code Review
 **ACTIONS (in order):**
-1. call the `skill` tool NOW with `code-reviewer`.
-2. review the implementation. The skill outputs an overall score on 10. Minimum required: **8/10**. If below 8, loop back to step 2 (delegate to the implementation agent with the review findings) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
-3. print `SKILL_CONFIRM: code-reviewer loaded and applied on step 4`.
-4. `bash .../trace.sh "<repo-root>" "<loop_id>" "4" "skill" "code-reviewer" "loaded" "score=<S>, critical=<N>"`.
-5. before step 5: `verify-step.sh ... "4" "skill" "code-reviewer"` — if fail, redo step 4.
+1. call the `task` tool NOW with `subagent_type: code-reviewer-<lang>` per the detected stack (Python → `code-reviewer-python`, React → `code-reviewer-react`, NestJS → `code-reviewer-nestjs`). The task prompt MUST:
+   - Include the FULL requirements spec verbatim (if available) so the reviewer can validate against acceptance criteria.
+   - Forward the list of implemented files from step 2 and test files from step 1.
+   - Instruct the agent to end its returned message with `AGENT_CONFIRM: code-reviewer-<lang> delegated on step 4 → score=<S>, critical=<N>`.
+2. the agent auto-loads `code-reviewer` + `hexagonal-<lang>-patterns` + `async-<lang>-patterns` + `performance-audit` + `test-writer-<lang>` via its frontmatter and runs on `ollama-cloud/kimi-k2.7-code`. The review uses the 6-dimension scoring rubric. Minimum required: **8/10**. If below 8, loop back to step 2 (delegate to the implementation agent with the review findings and `task_id` to resume the session) and fix, then re-run. If any critical issues remain, loop back regardless of score. Commit fixes.
+3. `bash .../trace.sh "<repo-root>" "<loop_id>" "4" "agent" "code-reviewer-<lang>" "delegated" "score=<S>, critical=<N>"`.
+4. before step 5: `verify-step.sh ... "4" "agent" "code-reviewer-<lang>"` — if fail, redo step 4.
 
 ### 5. Code Simplifier
 **ACTIONS (in order):**
