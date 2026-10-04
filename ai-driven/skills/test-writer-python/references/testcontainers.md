@@ -1,17 +1,17 @@
-# Testcontainers — Real Infrastructure for Integration Tests
+# Testcontainers — Real Infrastructure (mandatory)
 
-Use [testcontainers-python](https://testcontainers-python.readthedocs.io/) for integration tests against **real** databases, message brokers, and cloud-emulated services (LocalStack). This extends the "real implementations" golden rule to infrastructure that can't run in-memory.
+Use [testcontainers-python](https://testcontainers-python.readthedocs.io/) for tests against **real** databases, message brokers, and cloud-emulated services (LocalStack). This IS the golden-rule infrastructure strategy — Docker is a hard requirement, there is no SQLite fallback.
 
 ## When to use testcontainers
+- **Behavioral tests from the router** — the default strategy: real Postgres behind the full real chain (see `router-test.md`)
 - **Integration tests** that must validate real Postgres / MongoDB / Redis / Kafka / RabbitMQ behavior
-- **Adapter tests** for infrastructure where SQLite in-memory doesn't match production (JSONB, `ON CONFLICT`, enum types, PostGIS)
+- **Adapter tests** for Postgres-specific behavior (JSONB, `ON CONFLICT`, enum types, PostGIS)
 - **S3 / SQS / SNS** tests via [LocalStack](https://docs.localstack.cloud/) container (instead of mocking boto3)
 - **Event-driven** flows that must validate real Redis pub/sub or NATS
 
-## When NOT to use testcontainers
-- **Unit tests** — use SQLite in-memory (see `conftest.md`) for repositories, mocks for external HTTP
-- **CI without Docker** — fall back to SQLite in-memory; mark testcontainers tests with a marker and skip them
-- **Fast feedback loop** — testcontainers add ~5-15s startup per container; keep the unit suite separate
+## Docker unavailable? Fail fast
+- **NEVER fall back to SQLite** — wrap container startup in `try/except` and re-raise a clear error (`RuntimeError("Docker is required to run the test suite. Start Docker and re-run.")`) so the suite exits non-zero on the very first test (pattern in `router-test.md`)
+- **Startup cost** — testcontainers add ~5-15s per container; scope containers to `session`/`module` to amortize
 
 ## Install
 ```bash
@@ -105,32 +105,32 @@ async def test_upload_adapter_writes_to_s3(s3_endpoint):
     # assert the object exists via a second read
 ```
 
-## Markers — skip when Docker is unavailable
+## Docker is a hard requirement — no skip, no fallback
 
 ```python
-# conftest.py
+# conftest.py — fail fast on the first test when Docker is unavailable
 import pytest
+from testcontainers.postgres import PostgresContainer
 
-def pytest_collection_modifyitems(config):
-    if not shutil.which("docker"):
-        skip = pytest.mark.skip(reason="Docker not available")
-        for item in config.items:
-            if "integration" in item.keywords:
-                item.add_marker(skip)
+
+@pytest.fixture(scope="session")
+def postgres_url():
+    try:
+        with PostgresContainer("postgres:16-alpine") as pg:
+            yield pg.get_connection_url(driver="asyncpg")
+    except Exception as exc:
+        raise RuntimeError(
+            "Docker is required to run the test suite (testcontainers PostgreSQL). "
+            "Start Docker and re-run 'uv run pytest'."
+        ) from exc
 ```
 
-```python
-# tests/integration/test_postgres_repository.py
-@pytest.mark.integration
-async def test_postgres_repo(pg_session):
-    ...
-```
+Never mark DB-dependent tests with `pytest.mark.skip` when Docker is missing — a silently skipped suite is a false green.
 
-Run unit tests fast, integration tests separately:
+Pure domain tests (no DB) still run without Docker; everything touching infrastructure requires it:
 ```bash
-uv run pytest                       # unit only (no docker)
-uv run pytest -m integration        # integration only
-uv run pytest -m "integration or not integration"  # everything
+uv run pytest                       # full suite — Docker required
+uv run pytest tests/unit/           # pure domain only (no DB) — no Docker needed
 ```
 
 ## Best practices

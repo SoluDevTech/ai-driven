@@ -1,17 +1,17 @@
-# Testcontainers — Real Infrastructure for Integration Tests
+# Testcontainers — Real Infrastructure (mandatory)
 
-Use [@testcontainers/nodejs](https://node.testcontainers.org/) for integration tests against **real** databases, message brokers, and cloud-emulated services. This extends the "real implementations" golden rule to infrastructure that can't run in SQLite in-memory.
+Use [@testcontainers/nodejs](https://node.testcontainers.org/) for tests against **real** databases, message brokers, and cloud-emulated services. This IS the golden-rule infrastructure strategy — Docker is a hard requirement, there is no SQLite fallback.
 
 ## When to use testcontainers
+- **Behavioral tests from the router** — the default strategy: real Postgres behind the real AppModule (see `router-test.md`)
 - **Integration tests** that must validate real Postgres / MongoDB / Redis / Kafka / RabbitMQ behavior
-- **Adapter tests** for infrastructure where SQLite in-memory doesn't match production (JSONB, `ON CONFLICT`, enum types, PostGIS, Mongo aggregations)
+- **Adapter tests** for Postgres-specific behavior (JSONB, `ON CONFLICT`, enum types, PostGIS, Mongo aggregations)
 - **S3 / SQS / SNS** tests via LocalStack container (instead of mocking the AWS SDK)
 - **Event-driven** flows that must validate real Redis pub/sub, NATS, or RabbitMQ
 
-## When NOT to use testcontainers
-- **Unit tests** — use SQLite in-memory (see `use-case-test.md`) for repositories, mocks for external HTTP
-- **CI without Docker** — fall back to SQLite in-memory; mark testcontainers tests and skip them when Docker is unavailable
-- **Fast feedback loop** — testcontainers add ~5-15s startup per container; keep the unit suite separate
+## Docker unavailable? Fail fast
+- **NEVER fall back to SQLite** — wrap container startup in `try/catch` and throw a clear error (`'Docker is required to run the test suite. Start Docker and re-run the tests.'`) so the suite exits non-zero on the very first test
+- **Startup cost** — testcontainers add ~5-15s per container; scope containers to `describe`/file level to amortize
 
 ## Install
 ```bash
@@ -164,43 +164,28 @@ it('uploads a file to S3 via the real adapter', async () => {
 });
 ```
 
-## Skip when Docker is unavailable
+## Docker is a hard requirement — no skip, no fallback
 
 ```typescript
-// jest.config.js — separate integration tests
-module.exports = {
-  projects: [
-    { displayName: 'unit', testMatch: ['**/*.spec.ts'], testEnvironment: 'node' },
-    { displayName: 'integration', testMatch: ['**/*.integration.spec.ts'], testEnvironment: 'node' },
-  ],
-};
-```
+// test/setup-containers.ts — fail fast when Docker is unavailable
+import { PostgreSqlContainer } from '@testcontainers/postgresql';
 
-```typescript
-// tests/setup.ts
-const dockerAvailable = await isDockerAvailable();
-if (!dockerAvailable) {
-  console.warn('Docker not available; skipping integration tests');
-}
-
-// tests/integration/setup.ts
-beforeAll(async () => {
-  if (!dockerAvailable) {
-    // jest will still run the file; skip each test
+export async function startPostgres() {
+  try {
+    return await new PostgreSqlContainer('postgres:16-alpine').start();
+  } catch (err) {
+    throw new Error(
+      'Docker is required to run the test suite (testcontainers PostgreSQL). Start Docker and re-run the tests.'
+    );
   }
-});
+}
 ```
 
-Or skip via an env var:
-```typescript
-const RUN_INTEGRATION = process.env.RUN_INTEGRATION === '1';
-(RUN_INTEGRATION ? describe : describe.skip)('PostgresUserRepository (integration)', () => { ... });
-```
+Never gate tests behind `RUN_INTEGRATION` env vars or `describe.skip` when Docker is missing — a silently skipped suite is a false green. Pure domain tests (no DB) still run without Docker; everything touching infrastructure requires it:
 
-Run:
 ```bash
-npm run test                    # unit only (no docker)
-RUN_INTEGRATION=1 npm run test  # including integration
+npm run test                    # full suite — Docker required
+npx jest src/domain/            # pure domain only (no DB) — no Docker needed
 ```
 
 ## Best practices

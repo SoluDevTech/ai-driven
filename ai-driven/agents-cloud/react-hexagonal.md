@@ -1,6 +1,7 @@
 ---
 name: react-hexagonal
 description: Use it for implementing the task asked by the user
+model: ollama-cloud/glm-5.3
 
 permission:
   mcp_*: deny

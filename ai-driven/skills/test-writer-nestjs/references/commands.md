@@ -21,10 +21,11 @@ npm run test:e2e
 ```
 
 ## Best Practices
-- **Explicit names**: `creates and persists a new user` > `test user creation`
+- **Explicit names**: `returns 201 with the created user` > `test user creation`
 - **One logical behavior per test** (multiple assertions OK if they describe the same observable outcome)
-- **Independent modules**: each test gets a fresh `Test.createTestingModule` with SQLite `:memory:` — no shared state
-- **Always call `module.close()`** in `afterEach` to release DB connections and avoid open handle warnings
-- **Reusable provider factories**: factor out mock providers in `test/fixtures/external.ts` as plain factory functions returning NestJS provider objects
-- **ValidationPipe in controller tests**: always configure the app the same way as production (`useGlobalPipes`, `useGlobalFilters`, etc.)
+- **Behavioral tests from the router**: one Supertest call per behavior on the real AppModule (see `router-test.md`) — `npm run test:e2e`
+- **Independent modules**: each test gets a fresh app instance; reset data between tests (`users.clear()`), don't recreate the container
+- **Always call `app.close()`** in `afterAll` to release DB connections and avoid open handle warnings
+- **Reusable provider factories**: factor out external-adapter mocks in `test/fixtures/external.ts` as plain factory functions returning NestJS provider objects
+- **Configure the app exactly as production** in behavioral tests (`useGlobalPipes`, `useGlobalFilters`, etc.)
 - **Coverage ≥ 80%**: but prioritize quality over quantity

@@ -1,6 +1,6 @@
 ---
 name: test-writer
-description: Use to write unit and integration tests. Detects the stack (Python/FastAPI, React/TypeScript, NestJS/TypeScript) and loads the matching test-writer skill. Invoke when you need to test a use case, component, hook, controller, or adapter.
+description: Use to write behavioral and integration tests. Detects the stack (Python/FastAPI, React/TypeScript, NestJS/TypeScript) and loads the matching test-writer skill. Invoke when you need to test a route, endpoint, use case, component, hook, controller, or adapter.
 permission:
   mcp_*: deny
 model: soludevtech/qwen3.6-35b
@@ -37,23 +37,26 @@ Once the stack is detected, load the matching `test-writer-<lang>` skill and the
 - NestJS → `test-writer-nestjs`, `hexagonal-nestjs-patterns`, `async-nestjs-patterns`
 
 ## Golden Rule (non-negotiable, applies to all stacks)
+- **Test from the router** — the default test entry point is an HTTP request through the real app (httpx AsyncClient on the FastAPI app factory / Supertest on the real NestJS AppModule); assert the response plus observable side effects; the full chain (router → use case → port → repo) runs real. Layer-level tests are exceptions for non-HTTP logic (cron, queue consumers, pure domain) or adapter-specific SQL.
 - **Real implementations** for ALL internal components (repositories, services, use cases, domain objects, hooks, stores)
 - **Mocks** ONLY for outbound adapters toward external systems (third-party APIs, email, S3, Stripe, payment gateways)
-- **Real infrastructure** via testcontainers for integration tests against real Postgres / Redis / Kafka / RabbitMQ / LocalStack
+- **Real infrastructure** via testcontainers for real Postgres / Redis / Kafka / RabbitMQ / LocalStack — Docker is a hard requirement; fail fast with a clear error when it is unavailable (no SQLite fallback)
 
 ## When I am invoked
 0. **STEP 0 skill gate** — load the matching skills FIRST (see STEP 0 above).
 1. **Detect the stack** from the task prompt (or minimal `pyproject.toml`/`package.json` inspection) and load the matching `test-writer-<lang>` skill — before any other file read.
 2. **Read the spec and source code** — understand the interface and expected behavior.
-3. **Ask for context** — which use case, component, controller, or adapter needs testing?
-4. **Classify dependencies** — internal → real impl; external → mock via fixtures/MSW/provider factories.
-5. **Write tests** following AAA (Arrange, Act, Assert) — use the templates from the loaded skill's `references/`.
+3. **Ask for context** — which route/endpoint needs testing? (for non-HTTP logic: which component, adapter, or entry point?)
+4. **Classify dependencies** — internal → real impl, wired as in production; external → mock via fixtures/MSW/provider factories.
+5. **Write tests** — behavioral tests from the router by default, following AAA (Arrange, Act, Assert) — use the templates from the loaded skill's `references/`.
 6. **Run** the tests to verify they pass.
 
 ## What you never do (any stack)
+- Test a use case in isolation when it is exposed via an HTTP route — test it from the router instead
+- Rebuild a partial test app / TestingModule that re-declares the real chain — use the real app factory / real AppModule and mock only the external boundary
 - Write an `InMemoryXxxRepository` or any other fake for an internal implementation
 - Mock a use case, domain service, domain object, hook, or store
-- Mock an internal repository / TypeORM repository with `jest.fn()` / `unittest.mock` — use the real impl + in-memory SQLite
+- Mock an internal repository / TypeORM repository with `jest.fn()` / `unittest.mock` — use the real impl + testcontainers Postgres
 - Assert on internal implementation details (spy on a private method)
 - Mock something just to make a test pass
 

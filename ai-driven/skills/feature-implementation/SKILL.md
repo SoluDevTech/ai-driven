@@ -105,7 +105,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 - [ ] 7. UNIT TESTS — run all unit tests
 - [ ] 8. SONARQUBE — load sonarfix skill, run sonar-scanner, 0 new issues
 - [ ] 9. TRIVY — load trivyfix skill, run trivy fs scan, 0 new vulns
-- [ ] 10. TESTER-QA — load test-writer-<lang> skill, rebuild Docker, manual QA + new e2e + `BUG_REPORT: <path|none>` pointer
+- [ ] 10. TESTER-QA — load test-writer-<lang> skill, relaunch stack (`docker compose up -d --build --force-recreate`), perform QA yourself (curl/browser) + transcribe into new e2e + replay feature + full suite + `BUG_REPORT: <path|none>` pointer
 - [ ] 11. DOCUMENTATION — load documentation-writer skill, update docs
 - [ ] 12. PR — load githubpr skill, open one draft PR per modified repo
 ```
@@ -191,7 +191,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 10. Tester-QA
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `test-writer-<lang>` (for e2e spec conventions).
-2. rebuild Docker images, restart stack, perform manual testing. Add NEW e2e/QA tests validating the shipped feature. Re-running existing tests is not enough. Verify all acceptance criteria are met end-to-end. Try edge cases automated tests missed.
+2. relaunch the app stack: `cd /Users/yohan/git/soludev/soludev-compose-apps/<app_name>/ && docker compose up -d --build --force-recreate` (base compose only), verify with `docker compose ps` + a smoke test of the base URL — STOP and report if it fails. Perform the QA yourself against the relaunched stack (curl for backend-only, Chrome DevTools MCP browser for fullstack): happy + edge + error cases. Transcribe the QA performed into NEW e2e/QA specs validating the shipped feature. Re-running existing tests is not enough. Verify all acceptance criteria are met end-to-end. Replay the feature specs, then the full suite.
 3. **Bug report persistence (mandatory)** — if you find confirmed bugs, persist the FULL bug report to `<LOOP_DIR>/bug-reports/<slug>.md` (reuse the `<slug>` from the `SPEC_FILE` path; if no spec, derive a short kebab-case slug, max 30 chars). Run `mkdir -p <LOOP_DIR>/bug-reports/` first, then `write` the complete tickets to that file — not a summary. Use the ticket format from the `tester-qa` skill (Severity, Feature, Layer, Observed/Expected behavior, Steps to reproduce, Evidence, Root cause hypothesis). This keeps the bug report co-located with the spec (`<LOOP_DIR>/specs/<slug>.md`) and the loop trace (`<LOOP_DIR>/loop-trace.md`) and lets you re-read it on a loop-back.
 4. Print one line per confirmed bug right before the pointer line: `BUG-XXX | Severity | Layer | <one-line root cause hypothesis>`.
 5. Print a mandatory pointer line so the loop is self-describing: `BUG_REPORT: <LOOP_DIR>/bug-reports/<slug>.md` (absolute path, bugs found) or `BUG_REPORT: none` (no bugs).
@@ -211,7 +211,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 12. PR
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `githubpr`.
-2. if no Jira ticket, create a conventional descriptive branch name. Open one detailed draft PR per modified repo. Commits are conventional. Do NOT merge — the user must be able to test on the local stack. Wait for CI green, then address reviewer feedback until 0 critical and score ≥ 8/10.
+2. if no Jira ticket, create a conventional descriptive branch name. Open one detailed draft PR per modified repo. Commits are conventional. Do NOT merge — the user must be able to test on the local stack. Wait for CI green. If PR reviewer feedback arrives, address only critical items in a single pass — do NOT loop on PR reviews (the in-loop code review gate is authoritative).
 3. print `SKILL_CONFIRM: githubpr loaded and applied on step 12`.
 4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "12" "skill" "githubpr" "loaded" "<PR URLs>"`.
 5. final: `verify-step.sh ... "12" "skill" "githubpr"` — if fail, redo step 12.

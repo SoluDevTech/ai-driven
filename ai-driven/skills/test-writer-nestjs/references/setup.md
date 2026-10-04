@@ -3,21 +3,25 @@
 ## Test Structure
 ```
 src/
+├── domain/
+│   └── (pure logic — unit tests allowed as EXCEPTION, co-located)
 ├── application/
 │   └── use-cases/
 │       └── create-user/
-│           ├── create-user.use-case.ts
-│           └── create-user.use-case.spec.ts    # Co-located use case tests
+│           └── create-user.use-case.ts
+│           └── create-user.use-case.spec.ts    # EXCEPTION ONLY — non-HTTP logic (cron, queue)
 ├── infrastructure/
 │   ├── persistence/
-│   │   └── typeorm-user.repository.spec.ts     # Adapter tests (optional)
+│   │   └── typeorm-user.repository.spec.ts     # EXCEPTION ONLY — adapter-specific SQL
 │   └── http/
-│       └── user.controller.spec.ts             # Controller tests (e2e-style)
+│       └── (no isolated controller tests — behavioral tests cover the chain)
 test/
-├── app.e2e-spec.ts                             # Full e2e tests
+├── api/                                         # Behavioral tests from the router (main focus)
+│   └── users.e2e-spec.ts                        # Supertest on the real AppModule
+├── app.e2e-spec.ts
 ├── jest-e2e.json
 └── fixtures/
-    └── external.ts                             # Shared jest.fn() factories
+    └── external.ts                              # Shared jest.fn() factories for external adapters
 ```
 
 ## jest configuration (package.json)

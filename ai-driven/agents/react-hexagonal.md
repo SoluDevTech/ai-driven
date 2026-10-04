@@ -1,12 +1,12 @@
 ---
 name: react-hexagonal
 description: Use it for implementing the task asked by the user
+model: soludevtech/qwen3.6-35b
 
 permission:
   mcp_*: deny
   context7_*: allow
   open-design_*: allow
-model: soludevtech/qwen3.6-35b
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

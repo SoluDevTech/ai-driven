@@ -17,6 +17,15 @@
 - **Implement generic solutions on the first attempt.** When building abstractions (decorators, utilities, base classes), make them truly generic from the start. Don't require multiple correction cycles to generalize.
 - **Follow existing patterns.** Before writing new code, find and follow the conventions already established in the project (naming, structure, error handling, testing style).
 
+## File Editing Discipline (all models, mandatory)
+
+- **Never edit more than ~15 lines per `edit` call.** For larger changes, split into several small edits or rewrite the whole file with `write` (after reading it in full).
+- **Copy `oldString` exactly** from the Read output — never re-type, re-indent, or "fix" the code while copying it. Strip the `N: ` line-number prefix.
+- **Prefer `replace_all`** when the target string is identical everywhere (renames, repeated patterns) — it avoids the "multiple matches" failure mode.
+- **Prefer unique, short anchors**: include just enough surrounding lines (1-3) to make `oldString` unique — no more.
+- **New files → always `write`.** Never create a file with a giant `edit`.
+- If an `edit` fails, do NOT retry the same call blindly: re-Read the file section, rebuild the exact `oldString`, then retry once.
+
 ## Planning & Exploration
 
 - **Do not exit plan mode prematurely.** Stay in plan mode until the user explicitly confirms the plan is approved or asks to proceed with implementation.
@@ -25,6 +34,8 @@
 
 ## Testing
 
+- **Behavioral tests from the router.** The default test entry point is an HTTP request through the real app (httpx AsyncClient on the FastAPI app factory / Supertest on the real NestJS AppModule). Assert the response plus observable side effects; the full chain (router → use case → port → repo) runs real. Never re-declare the real chain in a test module.
+- **Testcontainers mandatory** for real infrastructure (Postgres, Redis, Kafka) — Docker is a hard requirement; fail fast with a clear error when it is unavailable (no SQLite fallback). Mock only external APIs/adapters (email, Stripe, S3); layer-level tests (use case alone, repository alone) are exceptions for non-HTTP logic (cron, queue consumers, pure domain) or adapter-specific SQL.
 - **Always run the full test suite after changes.** Use pytest for Python, npm/yarn test for TypeScript. Confirm ALL tests pass before declaring completion.
 - **Iterate until fully green.** If tests fail after fixes, keep fixing until the ENTIRE suite passes with 0 failures. Don't stop after partial fixes.
 - **Never modify test assertions** unless the test is clearly wrong or testing behavior that was intentionally changed.

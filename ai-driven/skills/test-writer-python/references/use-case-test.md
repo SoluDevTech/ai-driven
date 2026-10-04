@@ -1,6 +1,8 @@
-# Testing a Use Case
+# Testing a Use Case — EXCEPTION ONLY
 
-Real repository backed by in-memory SQLite; external adapters mocked via fixtures. AAA pattern: Arrange, Act, Assert.
+> **Use this template ONLY for logic that has no HTTP entry point** (cron jobs, queue consumers, pure domain algorithms). If the use case is reachable from a route, test it from the router instead — see `router-test.md`.
+
+Real repository backed by testcontainers Postgres; external adapters mocked via fixtures. AAA pattern: Arrange, Act, Assert. Docker is a hard requirement — no SQLite fallback.
 
 ```python
 import pytest
@@ -15,8 +17,8 @@ class TestCreateUserUseCase:
     """Tests for CreateUserUseCase."""
 
     @pytest.fixture
-    def use_case(self, db_session) -> CreateUserUseCase:
-        repository = PostgresUserRepository(session=db_session)
+    def use_case(self, pg_session) -> CreateUserUseCase:
+        repository = PostgresUserRepository(session=pg_session)
         return CreateUserUseCase(user_repository=repository)
 
     @pytest.fixture
@@ -30,7 +32,7 @@ class TestCreateUserUseCase:
         self,
         use_case: CreateUserUseCase,
         valid_request: CreateUserRequest,
-        db_session
+        pg_session
     ):
         """Should create and persist a new user."""
         # Act
@@ -41,7 +43,7 @@ class TestCreateUserUseCase:
         assert result.name == valid_request.name
 
         # Verify real persistence
-        repository = PostgresUserRepository(session=db_session)
+        repository = PostgresUserRepository(session=pg_session)
         saved_user = await repository.get_by_id(result.id)
         assert saved_user is not None
         assert saved_user.email == valid_request.email
@@ -50,11 +52,11 @@ class TestCreateUserUseCase:
         self,
         use_case: CreateUserUseCase,
         valid_request: CreateUserRequest,
-        db_session
+        pg_session
     ):
         """Should raise DuplicateEmailError when email exists."""
         # Arrange — insert via real repository
-        repository = PostgresUserRepository(session=db_session)
+        repository = PostgresUserRepository(session=pg_session)
         await repository.save(User(id=uuid4(), email=valid_request.email, name="Existing User"))
 
         # Act & Assert
@@ -91,4 +93,4 @@ class TestCreateUserWithNotification:
 ```
 
 ## Reasoning example
-> "`CreateOrderUseCase` depends on `OrderRepository` (internal → real impl with SQLite session) and `StripeAdapter` (external → mock). I create a `mock_stripe_payment_success` fixture and a `mock_stripe_payment_declined` fixture. I test the use case behavior in each scenario using the real repository backed by an in-memory SQLite database."
+> "`CreateOrderUseCase` depends on `OrderRepository` (internal → real impl, testcontainers Postgres) and `StripeAdapter` (external → mock). I create a `mock_stripe_payment_success` fixture and a `mock_stripe_payment_declined` fixture. This use case has no HTTP entry point (queue consumer), so I test it directly with the real repository."

@@ -1,6 +1,6 @@
 ---
 name: loop-implementation-review
-description: Skill-driven implementation loop wrapping feature-implementation. Aggressively loads the matching skill via the `skill` tool at EVERY step. Adds mandatory NEW e2e QA tests in `soludev-compose-apps/<app_name>/e2e` (real path on disk, NO leading `@`), a zero-critical-issues code review gate, one draft PR per modified repo, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green. Skills version (no agent delegation).
+description: Skill-driven implementation loop wrapping feature-implementation. Aggressively loads the matching skill via the `skill` tool at EVERY step. Adds mandatory NEW e2e QA tests in `soludev-compose-apps/<app_name>/e2e` (real path on disk, NO leading `@`), and a zero-critical-issues code review gate. One draft PR per modified repo, CI-waited, but NO reviewer loop on the PR (the in-loop code review gate is authoritative). Use when the user asks to implement a feature/evolution/bugfix and loop until QA and code review are green. Skills version (no agent delegation).
 ---
 
 You orchestrate a skill-driven implementation loop that wraps the **feature-implementation** skill. Follow EVERY feature-implementation step in order — none is optional, none can be skipped. feature-implementation aggressively loads the required skill via the `skill` tool at every step AND applies the trace & verification protocol from `/Users/yohan/.config/opencode/skills/_shared/TRACE_PROTOCOL.md` (trace file + in-output `SKILL_CONFIRM` confirmation + `verify-step.sh` gate before progressing). You enforce the gates below on top of it.
@@ -51,10 +51,10 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 
 ## QA gate (do not skip)
 
-- QA is a first-class step. In addition to the manual QA run, you MUST add **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e` to validate the feature/evolution/bugfix you just shipped. Re-running existing tests is not enough.
+- QA is a first-class step. You MUST relaunch the app's full docker stack (see the restart rule below), perform the manual QA yourself (curl for backend-only, Chrome DevTools MCP browser for fullstack), and transcribe the QA tests performed into **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e` to validate the feature/evolution/bugfix you just shipped. Re-running existing tests is not enough.
 - Confirmed bugs MUST be persisted to `<LOOP_DIR>/bug-reports/<slug>.md` (co-located with the spec at `<LOOP_DIR>/specs/<slug>.md` and the loop trace at `<LOOP_DIR>/loop-trace.md`, all under `~/.config/opencode/loops/loop-<timestamp>/`). The wrapped feature-implementation skill prints a `BUG_REPORT: <path|none>` pointer line (absolute path) at the end of step 10. `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to step 2 (reload the impl skills first), re-reading the bug report file IN FULL before fixing, then re-running steps 3-10. Loop until `BUG_REPORT: none`.
 - **NEVER skip e2e claiming the workspace does not exist.** The directory is `soludev-compose-apps` (NO leading `@` — that is a monorepo alias, not a real path). Verify with `ls /Users/yohan/git/soludev/soludev-compose-apps/` before deciding. If the app subfolder exists (e.g. `soludev-compose-apps/ubby/e2e/`), you MUST write and run e2e there. Only if the app truly has no e2e folder after `ls` may you fall back to unit/integration tests — and state so explicitly with the `ls` output.
-- Restart the impacted apps containers before QA.
+- Relaunch the app's full docker stack before QA: `cd /Users/yohan/git/soludev/soludev-compose-apps/<app_name>/ && docker compose up -d --build --force-recreate` (base compose only), then verify with `docker compose ps` + a smoke test of the base URL. If the stack fails to start: STOP and report — never QA against a stale stack.
 
 ## Code review gate
 
@@ -71,4 +71,4 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 
 - Use the **githubpr** skill. If no Jira ticket, create a conventional descriptive branch name. Commits are conventional.
 - Open one **detailed** PR **per modified repo**. Do NOT merge — the user must be able to test on the local stack.
-- Wait for CI to be green. Then another bot reviews. Address what is pertinent and loop until the reviewer finds **no critical issues** and rates the review **at least 8/10**.
+- Wait for CI to be green. If a bot/external reviewer posts findings on the PR, address only critical ones in a single pass — do NOT loop on PR reviews. The in-loop code review gate (step 4) is the authoritative review gate.

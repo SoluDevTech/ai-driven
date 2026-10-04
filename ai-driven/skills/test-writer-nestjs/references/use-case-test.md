@@ -1,11 +1,14 @@
-# Testing a Use Case (SQLite in-memory)
+# Testing a Use Case — EXCEPTION ONLY
 
-Real TypeORM repository backed by SQLite `:memory:`; external email adapter mocked via factory. AAA pattern.
+> **Use this template ONLY for logic that has no HTTP entry point** (cron jobs, queue consumers, pure domain algorithms). If the use case is reachable from a route, test it from the router instead — see `router-test.md`.
+
+Real TypeORM repository backed by testcontainers Postgres; external email adapter mocked via factory. AAA pattern. Docker is a hard requirement — no SQLite fallback.
 
 ```typescript
 import { Test, TestingModule } from '@nestjs/testing'
-import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm'
+import { TypeOrmModule } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import { CreateUserUseCase } from './create-user.use-case'
 import { CreateUserRequest } from './create-user.request'
 import { TypeOrmUserRepository } from '@/infrastructure/persistence/typeorm-user.repository'
@@ -14,6 +17,7 @@ import { DuplicateEmailError } from '@/domain/errors/duplicate-email.error'
 import { mockEmailSuccess, mockEmailTimeout } from '@/test/fixtures/external'
 
 describe('CreateUserUseCase', () => {
+  let container: StartedPostgreSqlContainer
   let module: TestingModule
   let useCase: CreateUserUseCase
   let dataSource: DataSource
@@ -23,17 +27,35 @@ describe('CreateUserUseCase', () => {
     name: 'John Doe',
   }
 
+  const pgDataSource = () =>
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: container.getHost(),
+      port: container.getMappedPort(5432),
+      username: container.getUsername(),
+      password: container.getPassword(),
+      database: container.getDatabase(),
+      entities: [UserEntity],
+      synchronize: true,
+    })
+
+  beforeAll(async () => {
+    try {
+      container = await new PostgreSqlContainer('postgres:16-alpine').start()
+    } catch (err) {
+      throw new Error(
+        'Docker is required to run the test suite (testcontainers PostgreSQL). Start Docker and re-run the tests.'
+      )
+    }
+  })
+
+  afterAll(async () => {
+    await container.stop()
+  })
+
   beforeEach(async () => {
     module = await Test.createTestingModule({
-      imports: [
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          entities: [UserEntity],
-          synchronize: true,
-        }),
-        TypeOrmModule.forFeature([UserEntity]),
-      ],
+      imports: [pgDataSource(), TypeOrmModule.forFeature([UserEntity])],
       providers: [
         CreateUserUseCase,
         TypeOrmUserRepository,
@@ -46,6 +68,7 @@ describe('CreateUserUseCase', () => {
   })
 
   afterEach(async () => {
+    await dataSource.getRepository(UserEntity).clear()
     await module.close()
   })
 
@@ -84,18 +107,10 @@ describe('CreateUserUseCase', () => {
   })
 
   it('does not fail when email delivery times out', async () => {
-    // Re-create module with timeout mock
+    // Re-create module with timeout mock — same real chain, different external mock
     await module.close()
     module = await Test.createTestingModule({
-      imports: [
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          entities: [UserEntity],
-          synchronize: true,
-        }),
-        TypeOrmModule.forFeature([UserEntity]),
-      ],
+      imports: [pgDataSource(), TypeOrmModule.forFeature([UserEntity])],
       providers: [CreateUserUseCase, TypeOrmUserRepository, mockEmailTimeout()],
     }).compile()
 
@@ -107,4 +122,4 @@ describe('CreateUserUseCase', () => {
 ```
 
 ## Reasoning example
-> "`CreateOrderUseCase` depends on `TypeOrmOrderRepository` (internal → real impl, SQLite in-memory) and `StripeAdapter` (external → `mockStripeSuccess()` / `mockStripeDeclined()` factory). I test the use case behavior in each payment scenario using the real repository backed by an in-memory SQLite database, wired via `Test.createTestingModule`."
+> "`CreateOrderUseCase` depends on `TypeOrmOrderRepository` (internal → real impl, testcontainers Postgres) and `StripeAdapter` (external → `mockStripeSuccess()` / `mockStripeDeclined()` factory). This use case has no HTTP entry point (queue consumer), so I test it directly with the real repository wired via `Test.createTestingModule`."

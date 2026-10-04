@@ -1,36 +1,51 @@
-# Testing a Repository Adapter (optional)
+# Testing a Repository Adapter — EXCEPTION ONLY
 
-Adapter test against in-memory SQLite. Real TypeORM, real entity, no mocks.
+> **Use this template ONLY for adapter-specific behavior not observable through routes** (raw SQL, JSONB queries, `ON CONFLICT` upserts, migration edge cases). Behavior reachable via a route is tested from the router — see `router-test.md`.
+
+Adapter test against a real testcontainers Postgres. Real TypeORM, real entity, no mocks. Docker is a hard requirement — fail fast when it is unavailable.
 
 ```typescript
-import { Test, TestingModule } from '@nestjs/testing'
-import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm'
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql'
+import { DataSource } from 'typeorm'
 import { TypeOrmUserRepository } from './typeorm-user.repository'
 import { UserEntity } from './user.entity'
 
 describe('TypeOrmUserRepository', () => {
-  let module: TestingModule
+  let container: StartedPostgreSqlContainer
+  let ds: DataSource
   let repository: TypeOrmUserRepository
 
-  beforeEach(async () => {
-    module = await Test.createTestingModule({
-      imports: [
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          entities: [UserEntity],
-          synchronize: true,
-        }),
-        TypeOrmModule.forFeature([UserEntity]),
-      ],
-      providers: [TypeOrmUserRepository],
-    }).compile()
+  beforeAll(async () => {
+    try {
+      container = await new PostgreSqlContainer('postgres:16-alpine').start()
+    } catch (err) {
+      throw new Error(
+        'Docker is required to run the test suite (testcontainers PostgreSQL). Start Docker and re-run the tests.'
+      )
+    }
 
-    repository = module.get(TypeOrmUserRepository)
+    ds = new DataSource({
+      type: 'postgres',
+      host: container.getHost(),
+      port: container.getMappedPort(5432),
+      username: container.getUsername(),
+      password: container.getPassword(),
+      database: container.getDatabase(),
+      entities: [UserEntity],
+      synchronize: true,
+    })
+    await ds.initialize()
+
+    repository = new TypeOrmUserRepository(ds)
+  })
+
+  afterAll(async () => {
+    await ds.destroy()
+    await container.stop()
   })
 
   afterEach(async () => {
-    await module.close()
+    await ds.getRepository(UserEntity).clear()
   })
 
   it('persists and retrieves a user by id', async () => {

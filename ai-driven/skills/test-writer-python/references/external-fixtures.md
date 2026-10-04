@@ -1,6 +1,6 @@
 # External Fixtures (Mocks)
 
-Mock ONLY outbound adapters toward external systems. Each fixture patches one external call and yields the mock for assertion.
+Mock ONLY outbound adapters toward external systems. Each fixture patches one external call and yields the mock for assertion. When testing from the router (see `router-test.md`), prefer `app.dependency_overrides` on the port; `unittest.mock.patch` is the fallback for adapters not wired via FastAPI DI.
 
 ```python
 # tests/fixtures/external.py
@@ -41,7 +41,7 @@ def mock_stripe_payment_declined():
 - File storage (S3, GCS) — the SDK call, not your adapter wrapper
 
 ## What is NOT external (use real impl)
-- Your repository adapters (use real impl + in-memory SQLite)
+- Your repository adapters (use real impl + testcontainers Postgres — Docker is a hard requirement)
 - Your domain services
 - Your use cases
 - Your domain entities

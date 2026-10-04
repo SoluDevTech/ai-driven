@@ -1,5 +1,5 @@
 ---
-description: "Write unit and integration tests for Python/FastAPI hexagonal apps. pytest + pytest-asyncio. Golden rule: real implementations for internal components, mocks only for outbound external adapters. Use when testing a use case, adapter, route, or async flow in a Python backend."
+description: "Write behavioral and integration tests for Python/FastAPI hexagonal apps. pytest + pytest-asyncio + httpx AsyncClient. Golden rule: tests start from the router with the full chain wired real (router → use case → port → repo), testcontainers for real infra, mocks only for outbound external adapters. Use when testing a route, endpoint, use case, adapter, or async flow in a Python backend."
 subtask: true
 ---
 

@@ -38,6 +38,6 @@ exit 3
 ## Exit codes
 | Code | Meaning |
 |------|---------|
-| `0` | CI green → safe to merge |
+| `0` | CI green → PR ready (merge only on explicit user request) |
 | `1` | CI red → stop, investigate |
 | `3` | Timeout → check manually |

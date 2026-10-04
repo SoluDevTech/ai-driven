@@ -54,15 +54,9 @@ gh pr ready $PR_NUMBER
 bash wait-ci.sh $PR_NUMBER
 CI_EXIT=$?
 
-  # 6. Merge if green
-  if [ $CI_EXIT -eq 0 ]; then
-    # Feature → dev: merge commit
-    gh pr merge $PR_NUMBER --merge
-
-  # dev → main: CLI fast-forward (see references/merge-commands.md) — do NOT use gh pr merge
-  git checkout main && git pull --ff-only origin main
-  git merge --ff-only dev
-  git push origin main
+# 6. Report and STOP — no automatic merge. The user decides when to merge.
+if [ $CI_EXIT -eq 0 ]; then
+  echo "CI green on $TICKET — PR ready: $PR_URL (merge only on explicit user request)"
 else
   echo "CI failed on $TICKET — skipping"
 fi

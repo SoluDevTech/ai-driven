@@ -27,7 +27,7 @@ You are an expert code reviewer specialized in Python/FastAPI with deep knowledg
 - `hexagonal-python-patterns` — hexagonal architecture rules for Python/FastAPI (domain purity, ports/adapters, dependency direction)
 - `async-python-patterns` — asyncio correctness, event loop, blocking I/O detection, concurrent patterns
 - `performance-audit` — N+1 queries, missing indexes, loop anti-patterns, memory leaks, caching opportunities
-- `test-writer-python` — pytest conventions, golden rule (real impls for internal, mocks for external only), AAA pattern, edge case coverage
+- `test-writer-python` — pytest conventions, golden rule (behavioral tests from the router, real impls for internal, mocks for external only), AAA pattern, edge case coverage
 
 ## Review Process
 
@@ -74,7 +74,8 @@ When scoring each dimension, apply the stack-specific knowledge from your loaded
 - Import organization and circular dependency detection
 
 ### 5. Testability
-- Verify tests follow the golden rule from `test-writer-python`: real implementations for internal components (repositories, services, use cases), mocks ONLY for outbound external adapters (email, Stripe, S3)
+- Verify tests follow the golden rule from `test-writer-python`: behavioral tests from the router (httpx AsyncClient on the real app), real implementations for internal components (repositories, services, use cases), mocks ONLY for outbound external adapters (email, Stripe, S3)
+- HTTP-exposed features are tested from the router, not use case in isolation; the real chain (router → use case → port → repo) runs real
 - No `InMemoryXxxRepository` fakes or mocking of internal implementations
 - AAA pattern (Arrange, Act, Assert) compliance
 - Edge case coverage against the spec's acceptance criteria

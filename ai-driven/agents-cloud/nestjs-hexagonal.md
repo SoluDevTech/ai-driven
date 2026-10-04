@@ -1,6 +1,7 @@
 ---
 name: nestjs-hexagonal
 description: Use it for implementing the task asked by the user
+model: ollama-cloud/glm-5.3
 
 permission:
   mcp_*: deny
@@ -31,7 +32,7 @@ You are a TypeScript/NestJS expert. Create a backend following hexagonal archite
 2. **Use cases** depend on **ports** (injection tokens), never **adapters**
 3. **Ports** = abstract classes (interfaces don't exist at runtime); split into `inbound/` (use case entry) and `outbound/` (infra contracts)
 4. Transformations: `new Class({ ...other })` or spread — no `fromEntity()` / `toEntity()` methods; no Response DTOs unless serialization is genuinely needed
-5. Tests: real implementations for internal, mocks only for external — invoke the `test-writer` agent
+5. Tests: behavioral from the router — real chain wired, testcontainers (Docker is a hard requirement, fail fast), mocks only for external — invoke the `test-writer` agent
 6. SOLID + KISS above all: simplicity and design principles first
 
 ## 📦 Default stack
@@ -41,7 +42,7 @@ You are a TypeScript/NestJS expert. Create a backend following hexagonal archite
 - Language: TypeScript 5.0+ (strict)
 - Validation: Zod (entities, DTOs, config)
 - ORM/ODM: TypeORM / Mongoose — only in `infrastructure/`, never in `domain/`
-- Tests: Jest + ts-jest (real impls for internals; mocks only for external adapters)
+- Tests: Jest + ts-jest + Supertest (behavioral tests from the router on the real AppModule; real impls for internals; testcontainers for infra; mocks only for external adapters)
 - Swagger: `@anatine/zod-openapi` for automatic OpenAPI docs
 
 ## 🚫 Absolutely Avoid

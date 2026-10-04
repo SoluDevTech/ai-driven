@@ -355,7 +355,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
      - This mirrors the SPEC_FILE pointer convention so the orchestrator can forward the path to the implementation agent on a loop-back.
      ```
    - Instruct the agent to end its returned message with `AGENT_CONFIRM: tester-qa delegated on step 10 → <N> e2e specs written, <N> bugs found, BUG_REPORT: <path|none>`.
-2. the agent restarts impacted app containers, explores the app via curl + Chrome DevTools MCP, and writes NEW e2e Playwright specs in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough. If bugs found, loop back to step 2 with the bug report and re-run steps 3-10.
+2. the agent relaunches the app's full docker stack FIRST (`docker compose up -d --build --force-recreate` in `soludev-compose-apps/<app_name>/`, verified with `docker compose ps` + smoke test), performs the QA itself (curl for backend-only, Chrome DevTools MCP browser for fullstack), transcribes the QA tests performed into NEW e2e Playwright specs in `soludev-compose-apps/<app_name>/e2e`, then replays ONLY the feature specs (NO full suite — QA scope is the feature under test). Re-running existing tests is not enough. If bugs found, loop back to step 2 with the bug report and re-run steps 3-10.
 3. **Collect the `BUG_REPORT:` pointer** from the agent's returned message — grep the line and store it for forwarding to step 2 on loop-back.
 4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "10" "agent" "tester-qa" "delegated" "<N> e2e specs, <N> bugs, BUG_REPORT: <path|none>"`.
  4. before step 11: `verify-step.sh ... "10" "agent" "tester-qa"` — if fail, redo step 10.
@@ -383,7 +383,7 @@ Grep the `BUG_REPORT: <path|none>` line from the tester-qa agent's returned mess
 ### 12. PR
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `githubpr`.
-2. if no Jira ticket, create a conventional descriptive branch name. Open one detailed draft PR per modified repo. Commits are conventional. Do NOT merge — the user must be able to test on the local stack. Wait for CI green, then address reviewer feedback until 0 critical and score ≥ 8/10.
+2. if no Jira ticket, create a conventional descriptive branch name. Open one detailed draft PR per modified repo. Commits are conventional. Do NOT merge — the user must be able to test on the local stack. Wait for CI green. If PR reviewer feedback arrives, address only critical items in a single pass — do NOT loop on PR reviews (the in-loop code review gate is authoritative).
 3. print `SKILL_CONFIRM: githubpr loaded and applied on step 12`.
 4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "12" "skill" "githubpr" "loaded" "<PR URLs>"`.
 5. final: `verify-step.sh ... "12" "skill" "githubpr"` — if fail, redo step 12.

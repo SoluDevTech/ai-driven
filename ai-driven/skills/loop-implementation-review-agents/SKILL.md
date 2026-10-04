@@ -1,6 +1,6 @@
 ---
 name: loop-implementation-review-agents
-description: Agent-driven implementation loop wrapping feature-implementation-agents. Aggressively delegates role steps to dedicated agents via the `task` tool (the orchestrator injects a SKILL MANDATE with exact skill names at the top of every task prompt — subagents do NOT auto-load skills) AND aggressively loads pure-skill steps (code-reviewer, code-simplifier, linter, sonarfix, trivyfix, documentation-writer, githubpr) via the `skill` tool directly. Adds mandatory NEW e2e QA tests in `soludev-compose-apps/<app_name>/e2e` (real path, NO leading `@`), a zero-critical-issues code review gate, one draft PR per modified repo, and a reviewer loop until 0 critical issues and score >= 8/10. Use when the user asks to implement a feature/evolution/bugfix and loop until QA, code review, and PR reviewer sign-off are all green — using agents as the execution layer for roles and skills as the execution layer for tooling steps.
+description: Agent-driven implementation loop wrapping feature-implementation-agents. Aggressively delegates role steps to dedicated agents via the `task` tool (the orchestrator injects a SKILL MANDATE with exact skill names at the top of every task prompt — subagents do NOT auto-load skills) AND aggressively loads pure-skill steps (code-reviewer, code-simplifier, linter, sonarfix, trivyfix, documentation-writer, githubpr) via the `skill` tool directly. Adds mandatory NEW e2e QA tests in `soludev-compose-apps/<app_name>/e2e` (real path, NO leading `@`), and a zero-critical-issues code review gate. One draft PR per modified repo, CI-waited, but NO reviewer loop on the PR (the in-loop code review gate is authoritative). Use when the user asks to implement a feature/evolution/bugfix and loop until QA and code review are green — using agents as the execution layer for roles and skills as the execution layer for tooling steps.
 ---
 
 You orchestrate an agent-driven implementation loop that wraps the **feature-implementation-agents** skill. Follow EVERY feature-implementation-agents step in order — none is optional, none can be skipped. feature-implementation-agents aggressively delegates role steps to agents (the orchestrator injects a SKILL MANDATE into every task prompt — subagents do NOT auto-load skills) and aggressively loads pure-skill steps via the `skill` tool, AND applies the trace & verification protocol from `/Users/yohan/.config/opencode/skills/_shared/TRACE_PROTOCOL.md` (trace file + in-output `AGENT_CONFIRM`/`SKILL_CONFIRM` confirmation + `verify-step.sh` gate before progressing). You enforce the gates below on top of it.
@@ -99,10 +99,10 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 
 ## QA gate (do not skip)
 
-- QA is a first-class step (step 10). The `tester-qa` agent MUST add **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e`. Re-running existing tests is not enough.
+- QA is a first-class step (step 10). The `tester-qa` agent MUST relaunch the app's full docker stack FIRST (`docker compose up -d --build --force-recreate` in `soludev-compose-apps/<app_name>/`), perform the QA itself (curl for backend-only, Chrome DevTools MCP browser for fullstack), then transcribe the QA tests performed into **NEW** e2e/QA tests in `soludev-compose-apps/<app_name>/e2e` and replay ONLY the feature specs (NO full suite — QA scope is the feature under test). Re-running existing tests is not enough.
 - The `tester-qa` agent MUST persist confirmed bugs to `<LOOP_DIR>/bug-reports/<slug>.md` and end its returned message with a `BUG_REPORT: <path|none>` pointer (absolute path). `BUG_REPORT: none` is the only condition that passes the QA gate. Any `BUG_REPORT: <path>` means a loop-back to the implementation agent with `SPEC_FILE` + `REVIEW` + `BUG_REPORT` in the CONTEXT block (see "Artifact forwarding" above).
 - **NEVER skip e2e claiming the workspace does not exist.** Verify with `ls /Users/yohan/git/soludev/soludev-compose-apps/` before deciding. If the app subfolder exists (e.g. `soludev-compose-apps/ubby/e2e/`), the agent MUST write and run e2e there. Only if the app truly has no e2e folder after `ls` may it fall back to unit/integration tests — and state so with the `ls` output.
-- Restart the impacted apps containers before QA — the `tester-qa` agent does this.
+- Relaunch the app's full docker stack before QA (`docker compose up -d --build --force-recreate` in `soludev-compose-apps/<app_name>/` + verification) — the `tester-qa` agent does this as its first step. Never QA against a stale stack.
 
 ## Code review gate
 
@@ -119,4 +119,4 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 
 - Use the **githubpr** skill. If no Jira ticket, create a conventional descriptive branch name. Commits are conventional.
 - Open one **detailed** PR **per modified repo**. Do NOT merge — the user must be able to test on the local stack.
-- Wait for CI to be green. Then another bot reviews. Address what is pertinent and loop until the reviewer finds **no critical issues** and rates the review **at least 8/10**.
+- Wait for CI to be green. If a bot/external reviewer posts findings on the PR, address only critical ones in a single pass — do NOT loop on PR reviews. The in-loop code review gate (step 4) is the authoritative review gate.

@@ -1,11 +1,11 @@
 ---
 name: githubpr
-description: Manage the full GitHub PR lifecycle from a Jira ticket create a branch with the format <JIRA-ID>/<simple-description>, push, open a PR for review, poll CI, and merge when green. Use this skill whenever the user mentions creating a PR, opening a pull request, pushing a branch for review, or linking a Jira ticket to a GitHub PR. Also trigger when the user asks to wait for CI, merge a PR or manage the git workflow around a Jira ticket.
+description: Manage the GitHub PR lifecycle from a Jira ticket create a branch with the format <JIRA-ID>/<simple-description>, push, open a PR for review, and poll CI. NO automatic merge — merging is always an explicit user decision. Use this skill whenever the user mentions creating a PR, opening a pull request, pushing a branch for review, or linking a Jira ticket to a GitHub PR. Also trigger when the user asks to wait for CI or merge a PR (merge only on explicit user request).
 ---
 
 # GitHub PR Skill
 
-Full lifecycle: branch → push → PR → CI → merge.
+Lifecycle: branch → push → PR → CI. **Stop there — no automatic merge.**
 
 ## 1. Branch naming convention
 
@@ -56,19 +56,19 @@ Possible states:
 
 → Load `references/ci-polling-script.md` for `wait-ci.sh` (polls `gh pr checks`, exit codes: 0=green, 1=red, 3=timeout).
 
-## 5. Merge
+## 5. Merge (ONLY on explicit user request)
 
-Two distinct scenarios — **load `references/merge-commands.md` before merging**:
+**Never merge automatically — not when CI is green, not as part of an agent loop.** Merging is always an explicit user decision. Only when the user explicitly asks to merge, load `references/merge-commands.md` and follow it:
 - **A. Feature → `dev`** (or `main` if no `dev`): `gh pr merge --merge`
 - **B. `dev` → `main`**: **NEVER use `gh pr merge`**. Use CLI `git merge --ff-only dev` + `git push origin main` (true fast-forward, no hash rewriting).
 
 ## 6. Full agent flow
 
-→ Load `references/pr-template.md` for the end-to-end bash script (branch → push → PR → ready → wait-ci → merge).
+→ Load `references/pr-template.md` for the end-to-end bash script (branch → push → PR → ready → wait-ci). Stop after CI is green — no merge step.
 
 ## Agent rules
 
-- **Never merge** if `wait-ci.sh` exit code != 0
+- **No automatic merge.** After CI is green, report the PR status and STOP — the user decides. Merge only on an explicit user request, then follow `references/merge-commands.md`
 - **Feature → `dev`**: use `gh pr merge --merge`
 - **`dev` → `main`**: **never use `gh pr merge`**. Use CLI `git merge --ff-only dev` + `git push origin main` (see `references/merge-commands.md`)
 - **Never force-push `dev` or `main`**
