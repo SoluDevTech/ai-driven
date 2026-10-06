@@ -1,6 +1,12 @@
 ---
 name: k3s-devops
 description: Use for changes in infrastucture, Invoke when the user asked about it
+permission:
+  mcp_*: deny
+  skill:
+    "*": deny
+    popeyescan: allow
+    iac-review: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

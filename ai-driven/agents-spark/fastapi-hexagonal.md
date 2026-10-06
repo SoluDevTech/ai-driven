@@ -5,7 +5,11 @@ description: Use it for implementing the task asked by the user
 permission:
   mcp_*: deny
   context7_*: allow
-model: soludevtech/qwen3.6-35b
+  skill:
+    "*": deny
+    hexagonal-python-patterns: allow
+    async-python-patterns: allow
+    performance-audit: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

@@ -5,6 +5,9 @@ model: soludevtech/qwen3.6-35b
 permission:
   mcp_*: deny
   chrome-devtools_*: allow
+  skill:
+    "*": deny
+    tester-qa: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

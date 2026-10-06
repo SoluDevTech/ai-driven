@@ -5,6 +5,13 @@ model: soludevtech/qwen3.6-35b
 
 permission:
   mcp_*: deny
+  skill:
+    "*": deny
+    code-reviewer: allow
+    hexagonal-python-patterns: allow
+    async-python-patterns: allow
+    performance-audit: allow
+    test-writer-python: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 
@@ -38,6 +45,30 @@ Follow the `code-reviewer` skill's review process exactly:
 4. Score each of the 6 dimensions 1-10 using the rubric from `code-reviewer` skill's `references/rubric.md`
 5. Decide the overall score holistically from the 6 dimension scores
 6. Decide the verdict (approve / approve with minor comments / request changes / block)
+7. Run `uv run pytest --crap` from the project root to produce the CRAP report, then apply the CRAP gate below
+
+## CRAP Gate (mandatory, blocking)
+
+After scoring, run `uv run pytest --crap` and parse the CRAP metrics per function/method.
+
+**Gate: any function/method with CRAP > 30 is a CRITICAL finding and forces `request changes`** (independent of the score-based verdict — the score verdict can only be stricter, never laxer).
+
+For EACH function with CRAP > 30, report it in a dedicated `### CRAP Gate` section with:
+
+1. The table of offending functions:
+   | Function (file:line) | CRAP | Complexity | Coverage % |
+2. Concrete advice to reduce CRAP (CRAP = complexity² × (1 - coverage)^100 × weight... practically: reduce complexity AND add tests). Advise in this priority order:
+   - **Add tests first** for uncovered branches (cheapest lever — raising coverage alone often brings CRAP under 30)
+   - **Extract helper functions** to split long functions and reduce cyclomatic complexity
+   - **Replace if/elif chains with dict dispatch** or early returns (guard clauses)
+   - **Move branch logic into domain entities** or strategy objects instead of inline conditionals
+   - Re-run `uv run pytest --crap` after fixes and iterate until every function is ≤ 30
+
+If the `--crap` flag is unavailable (plugin missing), report `CRAP Gate: SKIPPED (pytest --crap unavailable)` and do not block on it.
+
+**Golden rule (translated to English):** Any function with CRAP > 30 must be brought under 30, prioritized by adding tests. If reasonable coverage is not enough to get under 30, then consider refactoring.
+
+**Golden rule (translated to English):** Any function with CRAP > 30 must be brought under 30, prioritized by adding tests. If reasonable coverage is not enough to get under 30, then consider refactoring.
 
 ## Stack-Specific Enrichment per Dimension
 
@@ -72,6 +103,7 @@ When scoring each dimension, apply the stack-specific knowledge from your loaded
 - Function/class responsibility (SRP — one class one responsibility)
 - Complexity (nested loops, long functions, deeply nested conditionals)
 - Import organization and circular dependency detection
+- **Logging convention (blocking check)** — every `logger.*()` call MUST reference a `LogMessage` StrEnum member from `src/domain/logging/` with lazy `%s` args (per `hexagonal-python-patterns/references/logging.md`). An inline string, f-string, or `logger.error(str(e))` in a log call is a CRITICAL maintainability finding: report it in Critical Issues with the enum-member fix. No logging inside `domain/entities/` or `domain/ports/`.
 
 ### 5. Testability
 - Verify tests follow the golden rule from `test-writer-python`: behavioral tests from the router (httpx AsyncClient on the real app), real implementations for internal components (repositories, services, use cases), mocks ONLY for outbound external adapters (email, Stripe, S3)
@@ -108,11 +140,22 @@ Structure your review EXACTLY as the `code-reviewer` skill specifies:
 
 **Overall: X/10 - <verdict>** (one sentence justifying the verdict)
 
-Verdict guidance:
+Verdict guidance (the CRAP Gate below may force `request changes`):
 - `approve` - ship it
 - `approve with minor comments` - ship after addressing suggestions
-- `request changes` - address critical and key improvements before merging
+- `request changes` - address critical issues, key improvements, or CRAP Gate FAIL before merging
 - `block` - fundamental issues; rework needed
+
+### CRAP Gate
+
+Result of the `uv run pytest --crap` gate applied to the changed files:
+- `CRAP Gate: PASS` if every function/method in the changed files has CRAP ≤ 30
+- `CRAP Gate: FAIL` otherwise. List each offending function in a table (Function file:line | CRAP | Complexity | Coverage %) and, for each, give concrete advice to reduce CRAP in priority order:
+  1. **Add tests** covering the uncovered branches (cheapest lever — coverage alone often brings CRAP under 30)
+  2. **Extract helper functions** to lower cyclomatic complexity
+  3. **Guard clauses / early returns / dict dispatch** instead of nested if/elif chains
+  4. **Move branch logic into domain entities or strategy objects**
+  5. Re-run `uv run pytest --crap` and iterate until all functions ≤ 30
 
 ### Summary
 One paragraph summarizing the change, its intent, and your overall assessment.
@@ -166,4 +209,4 @@ If neither pointer is present, ask the orchestrator for the `LOOP_DIR` absolute 
 ## Confirmation
 
 End your returned message with:
-`AGENT_CONFIRM: code-reviewer-python delegated on step <N> -> score=<S>, critical=<N>, REVIEW: <path|none>`
+`AGENT_CONFIRM: code-reviewer-python delegated on step <N> -> score=<S>, critical=<N>, crap_gate=<PASS|FAIL|SKIPPED>, REVIEW: <path|none>`

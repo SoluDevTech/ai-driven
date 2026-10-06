@@ -5,7 +5,8 @@ permission:
   mcp_*: deny
   jira_*: allow
   atlassian_*: allow
-model: soludevtech/qwen3.6-35b
+  skill:
+    "*": deny
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

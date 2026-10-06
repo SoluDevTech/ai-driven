@@ -5,6 +5,13 @@ model: soludevtech/qwen3.6-35b
 
 permission:
   mcp_*: deny
+  skill:
+    "*": deny
+    code-reviewer: allow
+    hexagonal-react-patterns: allow
+    async-react-patterns: allow
+    performance-audit: allow
+    test-writer-react: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

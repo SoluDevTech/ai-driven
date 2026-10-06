@@ -6,7 +6,12 @@ permission:
   mcp_*: deny
   context7_*: allow
   open-design_*: allow
-model: soludevtech/qwen3.6-35b
+  skill:
+    "*": deny
+    hexagonal-react-patterns: allow
+    async-react-patterns: allow
+    vercel-react-best-practices: allow
+    performance-audit: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

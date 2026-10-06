@@ -1,10 +1,13 @@
 ---
 name: tester-qa
 description: Use to manually test the app after a functionality is done. Relaunches the app docker stack first (docker compose up -d --build --force-recreate in soludev-compose-apps), performs the QA itself (curl for backend-only, Chrome DevTools MCP browser for fullstack), transcribes the QA tests into Playwright specs, and replays them. Invoke when the developer finishes writing code and tests and documentation writer updated documentation.
-model: ollama-cloud/kimi-k3
+model: ollama-cloud/deepseek-v4.1-flash
 permission:
   mcp_*: deny
   chrome-devtools_*: allow
+  skill:
+    "*": deny
+    tester-qa: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 
