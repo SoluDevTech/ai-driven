@@ -2,6 +2,8 @@
 
 `renderHook`, `act`, `waitFor`. Real internal state; mocked external calls.
 
+> **Decision order — prefer the component as the entry point.** If any component consumes this hook and the behavior is observable in the UI, test THROUGH that component (`component-test.md`) instead of rendering the hook directly. Use `renderHook` ONLY when the hook is not yet consumed by a component, or is generic shared infrastructure. Never mock internal modules to make the hook testable — mock the network (MSW) it calls.
+
 ```ts
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useCheckout } from './useCheckout'

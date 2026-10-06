@@ -36,8 +36,9 @@ If the feature has domain invariants, enforce them in the Zod entity schema and 
 2. **Layer rules** — load `references/layer-rules.md` before writing code in a given layer.
 3. **Zod usage** — load `references/zod-usage.md` for entity/DTO/config validation.
 4. **NestJS conventions** — load `references/nestjs-conventions.md` for DI, modules, guards, exception filters, Swagger.
-5. **Checklist** — run `references/checklist.md` end-to-end before declaring done.
-6. **Anti-patterns** — load `references/anti-patterns.md` to catch violations.
+5. **Logging rules** — load `references/logging.md` and run its 7-point call checklist on EVERY log call you write. A log call not referencing a `domain/logging/` message constant is a defect, not a style choice.
+6. **Checklist** — run `references/checklist.md` end-to-end before declaring done.
+7. **Anti-patterns** — load `references/anti-patterns.md` to catch violations.
 
 ## 🎯 Core principles (summary)
 - **Domain**: business core with Zod for entity validation — NO NestJS decorators, TypeORM, or Mongoose imports
@@ -48,6 +49,7 @@ If the feature has domain invariants, enforce them in the Zod entity schema and 
 - **Injection tokens** (symbols) for loose coupling between layers
 - **SOLID**: SRP (1 class = 1 responsibility), OCP (extend via new adapters), LSP, ISP (no 20-method ports), DIP (use cases depend on ports, never adapters)
 - **KISS**: direct transformations `new Class({ ...other })` or spread; **no** `fromEntity()` / `toEntity()` methods; **no** Response DTOs (return domain entities directly)
+- **Centralized logging (STRICT)**: every log call MUST use a message constant from `src/domain/logging/` with lazy `%s`/`%d` args. Template literals and inline strings in log calls are FORBIDDEN. No logging inside `domain/` (entities, ports, pure services) — see `references/logging.md`.
 
 ## 📦 Default stack
 - Package manager: **pnpm**
@@ -62,6 +64,7 @@ If the feature has domain invariants, enforce them in the Zod entity schema and 
 - `references/project-structure.md` — the 3-layer directory tree (domain ports split inbound/outbound)
 - `references/layer-rules.md` — domain + Zod, application DTOs, infrastructure adapter conventions
 - `references/zod-usage.md` — Zod schemas for entities, DTOs, config; `z.infer`, `.refine()`, `.transform()`
+- `references/logging.md` — centralized log message constants + the mandatory 7-point call checklist
 - `references/nestjs-conventions.md` — DI, modules, guards, exception filters, Swagger, middleware
 - `references/checklist.md` — architecture, SOLID, NestJS, DevOps checklists
 - `references/anti-patterns.md` — "Absolutely Avoid" + critical reminders

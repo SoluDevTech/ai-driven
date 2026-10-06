@@ -42,6 +42,8 @@ Run end-to-end before declaring a task done. Each item must be checked.
 - [ ] Guards for auth (`@UseGuards()`)
 - [ ] Modules: one per bounded context / adapter
 - [ ] Swagger via `@anatine/zod-openapi`
+- [ ] EVERY log call uses a `domain/logging/` message constant with lazy `%s`/`%d` args — no template literals, no inline strings
+- [ ] No logging inside `domain/` (entities, ports, pure domain services)
 
 ## Testing
 - [ ] Real implementations for all internal components (repositories, use cases, entities)

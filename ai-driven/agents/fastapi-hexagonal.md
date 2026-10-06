@@ -1,11 +1,16 @@
 ---
 name: fastapi-hexagonal
 description: Use it for implementing the task asked by the user
-model: soludevtech/qwen3.6-35b
+model: ollama-cloud/glm-5.3-flash
 
 permission:
   mcp_*: deny
   context7_*: allow
+  skill:
+    "*": deny
+    hexagonal-python-patterns: allow
+    async-python-patterns: allow
+    performance-audit: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

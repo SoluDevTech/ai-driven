@@ -10,18 +10,22 @@ Supertest against the REAL `AppModule` — the full chain runs real (Controller 
 ## Test structure
 ```
 test/
-├── api/                          # Behavioral tests from the router (main focus)
-│   ├── users.e2e-spec.ts
-│   └── orders.e2e-spec.ts
-├── app.e2e-spec.ts
-├── jest-e2e.json
-└── fixtures/
-    └── external.ts               # jest.fn() factories for external adapters only
+├── setup.ts                       # shared bootstrap (real AppModule + testcontainers) + auth helpers
+├── fixtures/
+│   └── external.ts                # jest.fn() factories for external adapters (configurable failures)
+├── behavioral/                    # Behavioral tests from the router (main focus)
+│   └── <feature>/
+│       ├── create-user.spec.ts
+│       └── get-user.spec.ts
+└── unit/                          # ONLY: pure domain without HTTP entry, scripts, consumers
 ```
+
+One file per endpoint, grouped by feature directory. Every branch of the endpoint lives in the same file.
 
 ## Behavioral test — real AppModule + testcontainers PG
 
 ```typescript
+# test/behavioral/users/create-user.spec.ts — one behavioral spec per endpoint
 import { Test } from '@nestjs/testing'
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import * as request from 'supertest'
@@ -31,7 +35,7 @@ import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers
 import { AppModule } from '@/app.module'                      // the REAL module — full chain wired
 import { SendgridEmailAdapter } from '@/infrastructure/email/sendgrid-email.adapter'
 import { UserEntity } from '@/infrastructure/persistence/user.entity'
-import { mockEmailSuccess, mockEmailTimeout } from '@/test/fixtures/external'
+import { mockEmail, mockEmailSuccess, mockEmailTimeout } from '@/test/fixtures/external'
 
 describe('POST /users (behavioral)', () => {
   let app: INestApplication
@@ -119,7 +123,7 @@ describe('POST /users (behavioral)', () => {
   })
 
   it('still returns 201 when the welcome email times out', async () => {
-    // Rebuild the app with mockEmailTimeout() — same real chain, different external mock
+    // Rebuild the app with mockEmail('timeout') — same real chain, different external failure mode
     // (identical setup, only the .overrideProvider(SendgridEmailAdapter) factory changes)
     const response = await request(app.getHttpServer())
       .post('/users')
@@ -135,7 +139,8 @@ describe('POST /users (behavioral)', () => {
 - **Import the real `AppModule`** — never re-declare controllers/use cases/repositories in the testing module; the only infra override is the DataSource pointing at the testcontainers instance
 - **`overrideProvider` ONLY for external adapters** (email, Stripe, S3) — using it on an internal class invalidates the test
 - **One container per file (or suite)** — amortize startup; reset data between tests (`users.clear()`), don't recreate the container
+- **One spec file per endpoint** — `test/behavioral/<feature>/<endpoint>.spec.ts` holds every branch of that endpoint (happy path, validation, auth, conflicts, external failures)
 - **Docker unavailable?** do NOT fall back to SQLite — wrap container startup in `try/catch` and fail fast with a clear error so the suite exits non-zero
 
 ## Reasoning example
-> "POST /users wires UserController → CreateUserUseCase → UserRepository (port) → TypeOrmUserRepository, plus SendgridEmailAdapter (external → `mockEmailSuccess()` / `mockEmailTimeout()` factory). I test from the router: one Supertest call per behavior against the real AppModule with a testcontainers Postgres, assert status + body, then verify persistence in the real table."
+> "POST /users wires UserController → CreateUserUseCase → UserRepository (port) → TypeOrmUserRepository, plus SendgridEmailAdapter (external → `mockEmail('success')` / `mockEmail('timeout')` factory). I write `test/behavioral/users/create-user.spec.ts`: one Supertest call per behavior against the real AppModule with a testcontainers Postgres, assert status + body, then verify persistence in the real table."

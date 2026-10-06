@@ -18,8 +18,13 @@ Write clear, maintainable tests for a React/TypeScript app with Vitest, React Te
 - The task is Python or NestJS testing → use `test-writer-python` / `test-writer-nestjs`
 
 ## 🎯 Golden Rule (non-negotiable)
+- **Test at the HIGHEST entry point available, in this strict order**:
+  1. **Component/page owns the behavior → render the real component** (RTL) with its real providers — assert what the USER observes (roles, text, callbacks), not internals.
+  2. **Logic lives in a hook/store reachable from a component → prefer testing through the component that uses it**; test the hook directly (`renderHook`) ONLY when no component consumes it yet or the hook is generic/shared infrastructure.
+  3. **Pure TypeScript utilities with no UI/hook consumer → direct unit tests allowed** — but when a utility is exercised by a tested component/hook chain, prefer asserting its effect through that chain.
 - **Real implementations** for ALL internal components (hooks, context providers, stores, services, domain utilities)
-- **Mocks** ONLY for outbound adapters toward external systems (REST APIs, third-party SDKs, analytics, storage)
+- **Mocks** ONLY for outbound adapters toward external systems (REST APIs, third-party SDKs, analytics, storage) — at the network boundary (MSW) or via `vi.mock` on the adapter module
+- **A hook/service/adapter is NEVER the direct test subject when a component consumes it** — the component IS the entry point
 - **Real infrastructure** via testcontainers for integration / E2E tests that need a real backend (Postgres, Redis, LocalStack) — see `references/testcontainers.md`
 
 A stub/fake that diverges silently from the real implementation produces tests that pass but don't detect real regressions. Mocking only the network boundary keeps cost low and confidence high.
@@ -48,9 +53,12 @@ If the component/hook has validation logic or business rules, add at least one t
 - Write a fake store, fake context, or fake hook to replace a real internal implementation
 - Mock a React component under test or any component in its subtree
 - Mock Zustand, React Query, or any other internal state manager
+- Mock an internal service/adapter module to make a hook or component testable — mock the NETWORK (MSW) it calls instead
+- Test a hook directly when a component consumes it and the behavior is UI-observable — test through the component
 - Assert on internal implementation details (spy on a private function, check component state directly)
 - Use `waitFor` polling as a workaround for missing `await` on user events
 - Forget `userEvent.setup()` — never use the legacy `userEvent` without it
+- Mock something just to make a test pass
 
 ## Related skills
 - `hexagonal-react-patterns` — project structure, layer rules, CVA variants

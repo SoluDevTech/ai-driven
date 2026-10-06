@@ -5,6 +5,8 @@ permission:
   mcp_*: deny
   jira_*: allow
   atlassian_*: allow
+  skill:
+    "*": deny
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 

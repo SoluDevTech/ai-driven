@@ -2,6 +2,8 @@
 
 The test entry point is an HTTP request through the real FastAPI app; the observable behavior is the HTTP response plus side effects (DB state, emitted events). The full chain runs real: Router → Use Case → Port → Repository.
 
+> If the logic you need to test has NO HTTP route but is triggered by a queue/cron consumer, do NOT test it here — use `consumer-test.md` (real published message through the real broker). A use case/service/adapter is never the direct test subject.
+
 - **Act** = one HTTP call via httpx `AsyncClient` + `ASGITransport` (no live server, no network)
 - **Assert** = status code + response body + persistence via the real repository
 - **Infra** = real Postgres via testcontainers (see `testcontainers.md`)
@@ -10,14 +12,17 @@ The test entry point is an HTTP request through the real FastAPI app; the observ
 ## Test structure
 ```
 tests/
-├── api/                        # Behavioral tests from the router (main focus)
-│   ├── test_users_api.py
-│   └── test_orders_api.py
-├── unit/                       # EXCEPTION: non-HTTP logic only (cron, queue, pure domain)
+├── conftest.py                  # real app, httpx client, pg_session, auth helpers
 ├── fixtures/
-│   └── external.py             # Mocks for external calls only
-└── conftest.py                 # app, client, pg_session fixtures
+│   └── external.py              # mocks for external adapters (configurable failures)
+├── behavioral/                  # Behavioral tests from the router (main focus)
+│   └── <feature>/
+│       ├── test_create_user.py
+│       └── test_get_order.py
+└── unit/                        # ONLY: pure domain without HTTP entry, scripts, consumers
 ```
+
+One file per endpoint, grouped by feature directory. Every branch of the endpoint lives in the same file.
 
 ## conftest.py — real app + client + testcontainers PG
 
@@ -69,6 +74,7 @@ async def client(app):
 ## Behavioral test — AAA through the router
 
 ```python
+# tests/behavioral/users/test_create_user.py
 from uuid import uuid4
 from src.domain.entities import User
 from src.infrastructure.persistence.postgres_user_repository import PostgresUserRepository

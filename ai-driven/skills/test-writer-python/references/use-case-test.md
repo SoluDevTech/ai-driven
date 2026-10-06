@@ -1,6 +1,12 @@
-# Testing a Use Case — EXCEPTION ONLY
+# Testing a Use Case — EXCEPTION ONLY (`tests/unit/`)
 
-> **Use this template ONLY for logic that has no HTTP entry point** (cron jobs, queue consumers, pure domain algorithms). If the use case is reachable from a route, test it from the router instead — see `router-test.md`.
+> **Use this template ONLY for logic that has NO HTTP route and NO consumer trigger** (cron jobs, pure domain algorithms). These tests live in `tests/unit/`.
+>
+> Decision order:
+> - Route exposes it → test from the router (`router-test.md`).
+> - A queue/cron consumer triggers it → test via `consumer-test.md` (real message published to the real broker, observable side effects only) — do NOT instantiate the use case here.
+> - Adapter/internal service → NEVER a direct test subject; its behavior is asserted through whichever entry point triggers it.
+> - Pure domain with no entry point → direct unit test allowed (`tests/unit/`).
 
 Real repository backed by testcontainers Postgres; external adapters mocked via fixtures. AAA pattern: Arrange, Act, Assert. Docker is a hard requirement — no SQLite fallback.
 

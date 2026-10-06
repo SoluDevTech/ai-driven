@@ -1,6 +1,12 @@
-# Testing a Use Case — EXCEPTION ONLY
+# Testing a Use Case — EXCEPTION ONLY (`test/unit/`)
 
-> **Use this template ONLY for logic that has no HTTP entry point** (cron jobs, queue consumers, pure domain algorithms). If the use case is reachable from a route, test it from the router instead — see `router-test.md`.
+> **Use this template ONLY for logic that has NO HTTP route and NO processor/scheduler trigger** (cron-internal logic, pure domain algorithms). These tests live in `test/unit/`.
+>
+> Decision order:
+> - Route exposes it → test from the router (`router-test.md`).
+> - A queue processor/messaging consumer/scheduler triggers it → test via `processor-test.md` (real message/job in the real broker, observable side effects only) — do NOT instantiate the use case here.
+> - Adapter/internal service → NEVER a direct test subject; its behavior is asserted through whichever entry point triggers it (or `repository-test.md` for adapter-specific SQL).
+> - Pure domain with no entry point → direct unit test allowed (`test/unit/`).
 
 Real TypeORM repository backed by testcontainers Postgres; external email adapter mocked via factory. AAA pattern. Docker is a hard requirement — no SQLite fallback.
 

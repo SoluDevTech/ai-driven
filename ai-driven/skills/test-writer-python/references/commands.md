@@ -8,10 +8,10 @@ uv run pytest
 uv run pytest --cov=src --cov-report=html
 
 # Specific test file
-uv run pytest tests/api/test_users_api.py -v
+uv run pytest tests/behavioral/users/test_create_user.py -v
 
 # Single test
-uv run pytest tests/api/test_users_api.py::TestCreateUserRoute::test_returns_409_when_email_already_exists -v
+uv run pytest tests/behavioral/users/test_create_user.py::TestCreateUserRoute::test_returns_409_when_email_already_exists -v
 
 # Watch mode (requires pytest-watch)
 ptw -- -x

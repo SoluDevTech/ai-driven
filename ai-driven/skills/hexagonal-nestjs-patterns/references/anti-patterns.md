@@ -16,6 +16,8 @@ Load this before review to catch violations.
 - ❌ Calling `.parse()` twice on the same payload (entities already validate in their factory)
 - ❌ Inferring DTO types from entity schemas when the DTO is a subset (define a separate schema)
 - ❌ Using `.refine()` for synchronous DB checks (do those in the use case)
+- ❌ Inline strings or template literals in log calls — every log call MUST use a `domain/logging/` message constant with lazy `%s`/`%d` args (see `logging.md`)
+- ❌ Logging inside `domain/` (entities, ports, pure domain services)
 
 ## Critical Reminders
 1. **Domain** = pure TypeScript + Zod (NO NestJS decorators)

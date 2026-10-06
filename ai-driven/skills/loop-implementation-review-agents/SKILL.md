@@ -89,12 +89,12 @@ The wrapped feature-implementation-agents skill is aggressive about loading/dele
 | 3 (Test suite) | bash | run full test suite |
 | 4 (Review) | agent | `task` → `code-reviewer-python` / `code-reviewer-react` / `code-reviewer-nestjs` (SKILL MANDATE injects code-reviewer + hexagonal + async + performance-audit + test-writer; verify `SKILL_LOADED:`) |
 | 5 (Simplify) | skill | `skill` → `code-simplifier` |
-| 6 (Lint) | skill | `skill` → `linter` |
+| 6 (Lint) | skill | `skill` → `linter` (ruff + pyright — fix ALL issues incl. pre-existing type errors until 0) |
 | 7 (Unit tests) | bash | run all unit tests |
 | 8 (Sonar) | skill | `skill` → `sonarfix` |
 | 9 (Trivy) | skill | `skill` → `trivyfix` |
 | 10 (QA) | agent | `task` → `tester-qa` (no skills declared) |
-| 11 (Docs) | skill | `skill` → `documentation-writer` |
+| 11 (Docs) | skill | `skill` → `documentation-writer` (docs + `<LOOP_DIR>/loop-report.html` mandatory) |
 | 12 (PR) | skill | `skill` → `githubpr` |
 
 ## QA gate (do not skip)

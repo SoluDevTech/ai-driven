@@ -169,7 +169,7 @@ Fallback: if no spec file path is provided and no `SPEC_FILE` line is found, fal
 | 2 (Impl) | `fastapi-hexagonal` | `react-hexagonal` | `nestjs-hexagonal` |
 | 4 (Review) | `code-reviewer-python` | `code-reviewer-react` | `code-reviewer-nestjs` |
 | 5 (Simplify) | `code-simplifier` skill (run yourself) | `code-simplifier` skill (run yourself) | `code-simplifier` skill (run yourself) |
-| 6 (Lint) | `linter` skill (run yourself) | `linter` skill (run yourself) | `linter` skill (run yourself) |
+| 6 (Lint) | `linter` skill (run yourself — ruff + pyright, fix all until 0) | `linter` skill (run yourself) | `linter` skill (run yourself) |
 | 8 (Sonar) | `sonarfix` skill (run yourself) | `sonarfix` skill (run yourself) | `sonarfix` skill (run yourself) |
 | 9 (Trivy) | `trivyfix` skill (run yourself) | `trivyfix` skill (run yourself) | `trivyfix` skill (run yourself) |
 | 10 (QA) | `tester-qa` | `tester-qa` | `tester-qa` |
@@ -204,12 +204,12 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 - [ ] 3. TEST SUITE — full test suite run, all green
 - [ ] 4. CODE REVIEW — code-reviewer-<lang> agent → 0 critical + score ≥ 8/10 + `REVIEW: <path>` pointer returned
 - [ ] 5. CODE SIMPLIFIER — code-simplifier skill → complexity reduced
-- [ ] 6. LINTER — linter skill → 0 lint issues
+- [ ] 6. LINTER — linter skill → 0 lint AND type issues (ruff + pyright)
 - [ ] 7. UNIT TESTS — all unit tests green
 - [ ] 8. SONARQUBE — sonarfix skill → 0 new issues
 - [ ] 9. TRIVY — trivyfix skill → 0 new vulns
 - [ ] 10. TESTER-QA — tester-qa agent + new e2e in soludev-compose-apps/<app>/e2e + `BUG_REPORT: <path|none>` pointer returned
-- [ ] 11. DOCUMENTATION — documentation-writer skill → docs updated
+- [ ] 11. DOCUMENTATION — documentation-writer skill → docs updated + `<LOOP_DIR>/loop-report.html` generated
 - [ ] 12. PR — githubpr skill → one draft PR per modified repo
 ```
 
@@ -303,7 +303,7 @@ You MUST maintain this checklist throughout the implementation. Print it before 
 ### 6. Linter
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `linter`.
-2. run ruff (Python) and/or eslint+prettier (TypeScript) per the loaded skill. Fix all linting issues before proceeding. Delegate fixes back to the implementation agent if non-trivial.
+2. run ruff + pyright (Python) and/or eslint+prettier (TypeScript) per the loaded skill. **Fix ALL issues (lint AND type errors, including pre-existing pyright errors) until 0 issues** — iterating run → fix → run — before proceeding. Delegate fixes back to the implementation agent if non-trivial.
 3. print `SKILL_CONFIRM: linter loaded and applied on step 6`.
 4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "6" "skill" "linter" "loaded" "<N> issues fixed"`.
 5. before step 7: `verify-step.sh ... "6" "skill" "linter"` — if fail, redo step 6.
@@ -376,9 +376,10 @@ Grep the `BUG_REPORT: <path|none>` line from the tester-qa agent's returned mess
 **ACTIONS (in order):**
 1. call the `skill` tool NOW with `documentation-writer`.
 2. update or create documentation when public APIs or significant behavior changes. Skip only if internal refactors with no user-facing impact (trace as `status=skipped-by-user`).
-3. print `SKILL_CONFIRM: documentation-writer loaded and applied on step 11`.
-4. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "11" "skill" "documentation-writer" "loaded" "<detail>"`.
-5. before step 12: `verify-step.sh ... "11" "skill" "documentation-writer"` — if fail, redo step 11.
+3. the documentation-writer skill ALSO generates the mandatory `<LOOP_DIR>/loop-report.html` (big-picture loop schema + per-step timeline) — verify the file exists before tracing (`test -f "<LOOP_DIR>/loop-report.html"`); if missing, redo the report part.
+4. print `SKILL_CONFIRM: documentation-writer loaded and applied on step 11 (loop-report.html generated)` then, as the LAST line of the output, print the clickable link: `LOOP_REPORT: file://<LOOP_DIR>/loop-report.html`.
+5. `bash .../trace.sh "<LOOP_DIR>" "<loop_id>" "11" "skill" "documentation-writer" "loaded" "<detail>; loop-report.html generated"`.
+6. before step 12: `verify-step.sh ... "11" "skill" "documentation-writer"` — if fail, redo step 11.
 
 ### 12. PR
 **ACTIONS (in order):**

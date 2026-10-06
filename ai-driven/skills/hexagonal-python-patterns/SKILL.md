@@ -46,7 +46,7 @@ For per-layer file templates, load the relevant reference file below.
 - **Direct transformations**: convert at the adapter boundary inline; no `from_entity` / `to_entity` mapper helpers.
 - **No Response DTOs for domain**: response/request DTOs live in `application/`; domain entities stay domain-shaped.
 - **Centralized errors**: all error codes, messages, and custom exceptions in `domain/errors/`.
-- **Centralized logging**: all log message enums in `domain/logging/`.
+- **Centralized logging (STRICT)**: every `logger.*()` call MUST use a `LogMessage` StrEnum member from `src/domain/logging/` with lazy `%s` arguments. Inline strings, f-strings, and `logger.error(str(e))` in log calls are FORBIDDEN — see `references/logging.md` checklist. No logging inside `domain/entities/` or `domain/ports/`.
 - **KISS**: no `__init__.py` unless re-export is genuinely needed; prefer flat, explicit imports.
 
 ## 🛡️ Edge cases (mandatory handling)
@@ -70,7 +70,7 @@ If the feature has domain invariants, enforce them in the entity constructor / v
 5. **Implement use cases** → `references/use-cases.md` — application logic + inbound ports.
 6. **Define entities** → `references/entities.md` — `domain/entities/` Pydantic models.
 7. **Centralize errors** → `references/errors.md` — error codes, messages, custom exceptions.
-8. **Centralize logging** → `references/logging.md` — log message enums.
+8. **Centralize logging** → `references/logging.md` — log message enums; run the 7-point call checklist on EVERY log call you write. A log call not referencing a `domain/logging/` enum member is a defect, not a style choice.
 9. **Define ports** → `references/ports.md` — `domain/ports/inbound/` + `domain/ports/outbound/` ABCs.
 
 ## References

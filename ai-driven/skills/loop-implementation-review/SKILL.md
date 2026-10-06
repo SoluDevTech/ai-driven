@@ -40,11 +40,11 @@ The wrapped feature-implementation skill loads the required skill via the `skill
 | 2 (Impl) | `hexagonal-<lang>` + `async-<lang>` + `performance-audit` |
 | 4 (Review) | `code-reviewer` + `hexagonal-python-patterns` + `async-python-patterns` + `performance-audit` + `test-writer-python` | `code-reviewer` + `hexagonal-react-patterns` + `async-react-patterns` + `performance-audit` + `test-writer-react` | `code-reviewer` + `hexagonal-nestjs-patterns` + `async-nestjs-patterns` + `performance-audit` + `test-writer-nestjs` |
 | 5 (Simplify) | `code-simplifier` |
-| 6 (Lint) | `linter` |
+| 6 (Lint) | `linter` (ruff + pyright — fix ALL issues incl. pre-existing type errors until 0) |
 | 8 (Sonar) | `sonarfix` |
 | 9 (Trivy) | `trivyfix` |
 | 10 (QA) | `test-writer-<lang>` (for e2e spec conventions) |
-| 11 (Docs) | `documentation-writer` |
+| 11 (Docs) | `documentation-writer` (docs + `<LOOP_DIR>/loop-report.html` mandatory) |
 | 12 (PR) | `githubpr` |
 
 `<lang>` ∈ {`python`, `react`, `nestjs`} per the detected stack.

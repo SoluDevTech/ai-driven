@@ -1,6 +1,6 @@
-# Testing a Repository Adapter — EXCEPTION ONLY
+# Testing a Repository Adapter — EXCEPTION ONLY (`test/unit/`)
 
-> **Use this template ONLY for adapter-specific behavior not observable through routes** (raw SQL, JSONB queries, `ON CONFLICT` upserts, migration edge cases). Behavior reachable via a route is tested from the router — see `router-test.md`.
+> **Use this template ONLY for adapter-specific behavior not observable through routes** (raw SQL, JSONB queries, `ON CONFLICT` upserts, migration edge cases). These tests live in `test/unit/`. Behavior reachable via a route is tested from the router — see `router-test.md`.
 
 Adapter test against a real testcontainers Postgres. Real TypeORM, real entity, no mocks. Docker is a hard requirement — fail fast when it is unavailable.
 

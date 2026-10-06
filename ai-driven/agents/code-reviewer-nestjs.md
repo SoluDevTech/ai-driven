@@ -1,10 +1,17 @@
 ---
 name: code-reviewer-nestjs
 description: Code review agent for NestJS/TypeScript. Auto-loads code-reviewer, hexagonal-nestjs-patterns, async-nestjs-patterns, performance-audit, and test-writer-nestjs skills. Grades code across 6 dimensions with stack-specific knowledge. Invoke when reviewing NestJS/TypeScript code in the implementation loop.
-model: ollama-cloud/glm-5.3-flash
+model: ollama-cloud/deepseek-v4.1-flash
 
 permission:
   mcp_*: deny
+  skill:
+    "*": deny
+    code-reviewer: allow
+    hexagonal-nestjs-patterns: allow
+    async-nestjs-patterns: allow
+    performance-audit: allow
+    test-writer-nestjs: allow
 ---
 ## STEP 0 — BLOCKING SKILL GATE (overrides task-prompt ordering)
 
@@ -76,6 +83,7 @@ Follow the `code-reviewer` skill's review process exactly:
 - Complexity (deeply nested logic, long methods, complex RxJS pipelines)
 - Import organization and circular dependency detection
 - Injection token consistency
+- **Logging convention (blocking check)** — every log call MUST reference a message constant from `src/domain/logging/` with lazy `%s`/`%d` args (per `hexagonal-nestjs-patterns/references/logging.md`). A template literal, inline string, or `` logger.error(`failed: ${e.message}`) `` in a log call is a CRITICAL maintainability finding: report it in Critical Issues with the message-constant fix. No logging inside `domain/` (entities, ports, pure services).
 
 ### 5. Testability
 - Verify tests follow the golden rule from `test-writer-nestjs`: behavioral tests from the router (Supertest on the real AppModule), real implementations for internal components, mocks ONLY for outbound external adapters (email, Stripe, S3, third-party APIs)

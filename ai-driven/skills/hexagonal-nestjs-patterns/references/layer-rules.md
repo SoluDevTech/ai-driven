@@ -8,7 +8,7 @@ Detailed rules per layer. Load before writing code in a given layer.
 - **Ports**: abstract classes (interfaces don't exist at runtime in TS). Split into `inbound/` (use case entry points) and `outbound/` (infrastructure contracts)
 - **Services** (optional): pure domain logic when use cases get heavy
 - **Errors**: centralised custom exception hierarchy (inherit from base domain exception)
-- **Logging**: centralised log message constants
+- **Logging**: centralized log message constants — every log call uses a `domain/logging/` message constant with lazy `%s`/`%d` args; template literals and inline strings in log calls are FORBIDDEN; no logging in `domain/`. See `logging.md` for the mandatory checklist.
 
 ```typescript
 // domain/entities/User.ts
